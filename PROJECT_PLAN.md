@@ -44,7 +44,7 @@ Frontend (Next.js + React)
 
 ## 详细实施步骤
 
-### 阶段一：项目初始化与环境搭建 (1-2 天)
+### 阶段一：项目初始化与环境搭建 (1-2 天) ✅ 已完成
 
 #### 1.1 项目创建
 
@@ -64,7 +64,7 @@ pnpm add class-variance-authority clsx tailwind-merge lucide-react
 pnpm add react-player zustand @heroicons/react
 
 # 语音识别相关
-pnpm add whisper-turbo ffmpeg.wasm
+pnpm add whisper-turbo @ffmpeg/ffmpeg @ffmpeg/util
 
 # 本地存储
 pnpm add dexie
@@ -72,6 +72,18 @@ pnpm add dexie
 # 开发依赖
 pnpm add -D @types/node @types/react @types/react-dom
 ```
+
+**✅ 安装状态检查** (2024-01-26):
+
+- [x] @ffmpeg/ffmpeg: ^0.12.15
+- [x] @ffmpeg/util: ^0.12.2
+- [x] whisper-turbo: ^0.11.0
+- [x] dexie: ^4.0.11
+- [x] react-player: ^3.3.1
+- [x] zustand: ^5.0.6
+- [x] @heroicons/react: ^2.2.0
+- [x] 所有 Radix UI 组件库
+- [x] 所有 UI 工具库 (clsx, tailwind-merge 等)
 
 #### 1.3 项目结构搭建
 
@@ -81,52 +93,80 @@ src/
 │   ├── layout.tsx
 │   ├── page.tsx
 │   ├── vocabulary/
-│   │   └── page.tsx
+│   │   └── page.tsx ✅
 │   └── globals.css
 ├── components/
 │   ├── ui/
-│   │   ├── button.tsx
-│   │   ├── dialog.tsx
-│   │   ├── select.tsx
-│   │   └── toast.tsx
-│   ├── video-player.tsx
-│   ├── subtitle-list.tsx
-│   ├── learning-panel.tsx
-│   ├── vocabulary-manager.tsx
-│   └── file-upload.tsx
+│   │   ├── button.tsx ✅
+│   │   ├── dialog.tsx ❌
+│   │   ├── select.tsx ❌
+│   │   └── toast.tsx ❌
+│   ├── video-player.tsx ❌
+│   ├── subtitle-list.tsx ❌
+│   ├── learning-panel.tsx ❌
+│   ├── vocabulary-manager.tsx ✅
+│   └── file-upload.tsx ❌
 ├── lib/
-│   ├── utils.ts
-│   ├── store.ts
-│   ├── whisper-client.ts
-│   ├── audio-processor.ts
-│   └── dictionary-api.ts
+│   ├── utils.ts ✅
+│   ├── store.ts ✅
+│   ├── whisper-client.ts ❌
+│   ├── audio-processor.ts ❌
+│   └── dictionary-api.ts ❌
 ├── types/
-│   ├── video.ts
-│   ├── subtitle.ts
-│   └── vocabulary.ts
+│   ├── video.ts ✅
+│   ├── subtitle.ts ✅
+│   └── vocabulary.ts ✅
 └── hooks/
-    ├── use-video-player.ts
-    ├── use-speech-recognition.ts
-    └── use-vocabulary.ts
+    ├── use-video-player.ts ❌
+    ├── use-speech-recognition.ts ❌
+    └── use-vocabulary.ts ❌
 ```
 
-### 阶段二：基础 UI 框架搭建 (2-3 天)
+**✅ 已完成文件**:
 
-#### 2.1 主页面布局
+- 基础类型定义 (video.ts, subtitle.ts, vocabulary.ts)
+- 状态管理 (store.ts)
+- 工具函数 (utils.ts)
+- UI 组件 (button.tsx)
+- 词汇管理器 (vocabulary-manager.tsx)
+- 词汇页面 (vocabulary/page.tsx)
 
-- 实现左右分栏布局
-- 左侧：视频播放器 + 学习面板
-- 右侧：字幕列表
-- 响应式设计
+**✅ 阶段二已完成文件**:
 
-#### 2.2 组件开发
+- ✅ UI 组件 (dialog.tsx, select.tsx, toast.tsx, button.tsx)
+- ✅ 核心功能组件 (video-player.tsx, subtitle-list.tsx, learning-panel.tsx, file-upload.tsx)
+- ✅ 主页面布局 (page.tsx)
+- ✅ 词汇页面 (vocabulary/page.tsx)
 
-- FileUpload 组件：文件选择 + 语言选择
-- VideoPlayer 组件：视频播放器封装
-- SubtitleList 组件：字幕列表展示
-- LearningPanel 组件：学习功能面板
+**✅ 阶段三已完成文件**:
 
-#### 2.3 状态管理设计
+- ✅ 本地存储管理 (storage.ts)
+- ✅ 视频播放器完善 (video-player.tsx)
+- ✅ 播放历史记录集成
+- ✅ 视频缓存功能
+
+**❌ 待创建文件**:
+
+- 功能库 (whisper-client.ts, audio-processor.ts, dictionary-api.ts)
+- 自定义 Hooks (use-video-player.ts, use-speech-recognition.ts, use-vocabulary.ts)
+
+### 阶段二：基础 UI 框架搭建 (2-3 天) ✅ 已完成
+
+#### 2.1 主页面布局 ✅
+
+- ✅ 实现左右分栏布局
+- ✅ 左侧：视频播放器 + 学习面板
+- ✅ 右侧：字幕列表
+- ✅ 响应式设计
+
+#### 2.2 组件开发 ✅
+
+- ✅ FileUpload 组件：文件选择 + 语言选择
+- ✅ VideoPlayer 组件：视频播放器封装
+- ✅ SubtitleList 组件：字幕列表展示
+- ✅ LearningPanel 组件：学习功能面板
+
+#### 2.3 状态管理设计 ✅
 
 ```typescript
 // store.ts
@@ -137,28 +177,40 @@ interface AppState {
   vocabulary: VocabularyItem[];
   isProcessing: boolean;
   language: string;
+  playerState: {
+    isPlaying: boolean;
+    currentTime: number;
+    duration: number;
+    volume: number;
+    playbackRate: number;
+  };
 }
 ```
 
-### 阶段三：视频播放功能 (1-2 天)
+### 阶段三：视频播放功能 (1-2 天) ✅ 已完成
 
-#### 3.1 文件上传
+#### 3.1 文件上传 ✅
 
-- 支持视频格式验证
-- 文件大小限制
-- 语言选择下拉框
+- ✅ 支持视频格式验证
+- ✅ 文件大小限制
+- ✅ 语言选择下拉框
 
-#### 3.2 视频播放器集成
+#### 3.2 视频播放器集成 ✅
 
-- react-player 配置
-- 播放控制
-- 时间轴同步
-- 全屏支持
+- ✅ 播放控制 (使用原生 video 元素)
+- ✅ 时间轴同步
+- ✅ 全屏支持
+- ✅ 播放速度控制
+- ✅ 音量控制
 
-#### 3.3 本地存储集成
+#### 3.3 本地存储集成 ✅
 
-- 视频文件缓存
-- 播放历史记录
+- ✅ 视频文件缓存 (IndexedDB)
+- ✅ 播放历史记录 (IndexedDB)
+- ✅ 字幕数据存储 (IndexedDB)
+- ✅ 词汇数据存储 (IndexedDB)
+- ✅ 用户设置存储 (IndexedDB)
+- ✅ 数据导出/导入功能
 
 ### 阶段四：语音识别核心功能 (3-5 天) ⭐ 重点
 
@@ -173,6 +225,7 @@ interface AppState {
 - ffmpeg.wasm 集成
 - 视频转音频
 - 音频格式优化
+  ![1753545789917](image/PROJECT_PLAN/1753545789917.png)
 
 #### 4.3 识别流程
 

@@ -1,103 +1,282 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { FileUpload } from "@/components/file-upload";
+import { VideoPlayer } from "@/components/video-player";
+import { SubtitleList } from "@/components/subtitle-list";
+import { LearningPanel } from "@/components/learning-panel";
+import { useAppStore } from "@/lib/store";
+import { StorageManager } from "@/lib/storage";
+import { Video } from "@/types/video";
+import { Subtitle } from "@/types/subtitle";
+import { VocabularyItem } from "@/types/vocabulary";
+import { Button } from "@/components/ui/button";
+import { BookOpen, Settings } from "lucide-react";
+import Link from "next/link";
+
+export default function HomePage() {
+  const {
+    currentVideo,
+    setCurrentVideo,
+    setSubtitles,
+    setCurrentSubtitle,
+    addVocabularyItem,
+  } = useAppStore();
+
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleFileSelect = async (file: File, language: string) => {
+    setIsProcessing(true);
+
+    try {
+      // Create video object
+      const video: Video = {
+        id: Date.now().toString(),
+        name: file.name,
+        url: URL.createObjectURL(file),
+        duration: 0, // Will be set when video loads
+        size: file.size,
+        format: file.name.split(".").pop() || "",
+        language,
+        uploadedAt: new Date(),
+        processed: false,
+      };
+
+      setCurrentVideo(video);
+
+      // TODO: Implement speech recognition here
+      // For now, create mock subtitles
+      const mockSubtitles: Subtitle[] = [
+        {
+          id: "1",
+          text: "Hello, welcome to our language learning platform.",
+          start: 0,
+          end: 3,
+          confidence: 0.95,
+          language,
+          videoId: video.id,
+        },
+        {
+          id: "2",
+          text: "This is a sample subtitle for demonstration purposes.",
+          start: 3,
+          end: 6,
+          confidence: 0.88,
+          language,
+          videoId: video.id,
+        },
+        {
+          id: "3",
+          text: "You can upload your own video files to start learning.",
+          start: 6,
+          end: 9,
+          confidence: 0.92,
+          language,
+          videoId: video.id,
+        },
+      ];
+
+      setSubtitles(mockSubtitles);
+      video.processed = true;
+      setCurrentVideo(video);
+
+      // Save video and subtitles to local storage
+      await StorageManager.saveVideo(video);
+      await StorageManager.saveSubtitles(mockSubtitles);
+
+      // Save video cache
+      await StorageManager.saveVideoCache({
+        videoId: video.id,
+        videoName: video.name,
+        url: video.url,
+        size: video.size,
+        format: video.format,
+        language: video.language,
+        cachedAt: new Date(),
+        lastAccessed: new Date(),
+      });
+    } catch (error) {
+      console.error("Error processing video:", error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleVideoProgress = (currentTime: number) => {
+    const subtitles = useAppStore.getState().subtitles;
+    const currentSubtitle = subtitles.find(
+      (subtitle) => currentTime >= subtitle.start && currentTime <= subtitle.end
+    );
+
+    if (currentSubtitle) {
+      setCurrentSubtitle(currentSubtitle);
+    }
+
+    if (currentVideo && Math.floor(currentTime) % 5 === 0) {
+      StorageManager.savePlayHistory({
+        videoId: currentVideo.id,
+        videoName: currentVideo.name,
+        currentTime,
+        duration: currentVideo.duration,
+        lastPlayed: new Date(),
+        playCount: 1,
+      }).catch((error) => {
+        console.error("Error saving play history:", error);
+      });
+    }
+  };
+
+  const handleDurationUpdate = (duration: number) => {
+    if (currentVideo && currentVideo.duration !== duration) {
+      const updatedVideo = { ...currentVideo, duration };
+      setCurrentVideo(updatedVideo);
+    }
+  };
+
+  const handlePlaySegment = (start: number, end: number) => {
+    // TODO: Implement segment playback
+    console.log("Play segment:", start, end);
+  };
+
+  const handleAddToVocabulary = async (word: string, context: string) => {
+    const vocabularyItem: VocabularyItem = {
+      id: Date.now().toString(),
+      word,
+      definition: "Definition will be loaded from dictionary API",
+      pronunciation: "",
+      partOfSpeech: "",
+      examples: [context],
+      videoId: currentVideo?.id || "",
+      subtitleId: useAppStore.getState().currentSubtitle?.id || "",
+      createdAt: new Date(),
+      lastReviewed: new Date(),
+      reviewCount: 0,
+      difficulty: "medium",
+    };
+
+    addVocabularyItem(vocabularyItem);
+    await StorageManager.saveVocabularyItem(vocabularyItem);
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold text-gray-900">
+                Language Learning Platform
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link href="/vocabulary">
+                <Button variant="outline" size="sm">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Vocabulary
+                </Button>
+              </Link>
+              <Button variant="ghost" size="sm">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
         </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {!currentVideo ? (
+          // Upload Screen
+          <div className="flex flex-col items-center justify-center min-h-[600px]">
+            {/* 
+              FIX: Added `relative` and `z-10` here.
+              This creates a new stacking context and lifts this entire section (and its children, like dropdowns)
+              above other elements on the page, fixing the "hollow" or "see-through" issue with the dropdown menu.
+            */}
+            <div className="text-center space-y-6 relative z-10">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                  Start Learning with Video
+                </h2>
+                <p className="text-lg text-gray-600 max-w-2xl">
+                  Upload a video file and we'll automatically generate subtitles
+                  to help you learn the language. Support for multiple languages
+                  and formats.
+                </p>
+              </div>
+
+              <FileUpload onFileSelect={handleFileSelect} />
+
+              {isProcessing && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span className="text-blue-800">
+                      Processing video and generating subtitles...
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          // Main Learning Interface
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            {/* Left Column - Video Player */}
+            <div className="col-span-1 md:col-span-8 flex flex-col">
+              {/* 
+                IMPROVEMENT: Replaced fixed height with `aspect-video`.
+                This makes the video player responsive and maintains a 16:9 aspect ratio.
+              */}
+              <div className="bg-black rounded-lg overflow-hidden w-full aspect-video">
+                <VideoPlayer
+                  url={currentVideo.url}
+                  onProgress={handleVideoProgress}
+                  onDuration={handleDurationUpdate}
+                />
+              </div>
+
+              {/* Video Info */}
+              <div className="mt-4 p-4 bg-white rounded-lg shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
+                  {currentVideo.name}
+                </h3>
+                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                  <span>Language: {currentVideo.language}</span>
+                  <span>
+                    Duration: {Math.floor(currentVideo.duration / 60)}m{" "}
+                    {Math.round(currentVideo.duration % 60)}s
+                  </span>
+                  <span>
+                    Size: {(currentVideo.size / 1024 / 1024).toFixed(1)} MB
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Subtitles and Learning Panel */}
+            <div className="col-span-1 md:col-span-4 flex flex-col space-y-6">
+              <div
+                className="bg-white rounded-lg shadow-sm overflow-hidden"
+                style={{ height: "300px" }}
+              >
+                <SubtitleList
+                  onSubtitleClick={(subtitle) => setCurrentSubtitle(subtitle)}
+                  onPlaySegment={handlePlaySegment}
+                />
+              </div>
+              <div
+                className="bg-white rounded-lg shadow-sm overflow-hidden"
+                style={{ height: "200px" }}
+              >
+                <LearningPanel
+                  onPlaySegment={handlePlaySegment}
+                  onAddToVocabulary={handleAddToVocabulary}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }

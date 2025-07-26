@@ -705,6 +705,15 @@ private generateMockSegments(videoId: string, language: string): Subtitle[] {
   - ✅ 帮助页面 (help/page.tsx)
   - ✅ 性能优化和错误处理
   - ✅ 用户体验改进
+- **2024-07-26**: 重要修复 - 数据持久化问题
+  - ✅ 修复 Zustand store 持久化问题
+  - ✅ 添加 localStorage 持久化中间件
+  - ✅ 修复词汇表刷新后消失的问题
+  - ✅ 修复主页面词汇添加功能
+  - ✅ 创建存储测试页面 (test-storage/page.tsx)
+  - ✅ 修复日期对象序列化/反序列化问题
+  - ✅ 添加安全的日期处理函数
+  - ✅ 修复 toLocaleDateString 错误
 
 ### 技术决策记录
 

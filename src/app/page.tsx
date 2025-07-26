@@ -9,6 +9,7 @@ import { TranscriptionProgress } from "@/components/transcription-progress";
 import { useAppStore } from "@/lib/store";
 import { StorageManager } from "@/lib/storage";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 import { Video } from "@/types/video";
 import { Subtitle } from "@/types/subtitle";
 import { VocabularyItem } from "@/types/vocabulary";
@@ -135,10 +136,16 @@ export default function HomePage() {
     console.log("Play segment:", start, end);
   };
 
+  // 使用 useVocabulary hook
+  const { addWord } = useVocabulary();
+
   const handleAddToVocabulary = async (word: string, context: string) => {
-    // This function is now handled by the useVocabulary hook
-    // The new vocabulary system will handle dictionary lookups automatically
-    console.log("Adding word to vocabulary:", word, context);
+    try {
+      await addWord(word);
+      console.log("Successfully added word to vocabulary:", word);
+    } catch (error) {
+      console.error("Failed to add word to vocabulary:", error);
+    }
   };
 
   return (

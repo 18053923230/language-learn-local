@@ -188,9 +188,20 @@ export function useVocabulary() {
   // Get words for review (not reviewed today)
   const getWordsForReview = useCallback(() => {
     const today = new Date().toDateString();
-    return vocabulary.filter(
-      (item) => !item.lastReviewed || item.lastReviewed.toDateString() !== today
-    );
+    return vocabulary.filter((item) => {
+      if (!item.lastReviewed) return true;
+
+      // 安全地处理日期
+      try {
+        const lastReviewedDate =
+          typeof item.lastReviewed === "string"
+            ? new Date(item.lastReviewed)
+            : item.lastReviewed;
+        return lastReviewedDate.toDateString() !== today;
+      } catch (error) {
+        return true; // 如果日期无效，认为需要复习
+      }
+    });
   }, [vocabulary]);
 
   // Get words by difficulty
@@ -207,7 +218,17 @@ export function useVocabulary() {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
 
-      return vocabulary.filter((item) => item.addedAt > cutoffDate);
+      return vocabulary.filter((item) => {
+        try {
+          const addedAtDate =
+            typeof item.addedAt === "string"
+              ? new Date(item.addedAt)
+              : item.addedAt;
+          return addedAtDate > cutoffDate;
+        } catch (error) {
+          return false; // 如果日期无效，不包含在最近添加的单词中
+        }
+      });
     },
     [vocabulary]
   );
@@ -238,17 +259,33 @@ export function useVocabulary() {
         ];
         const csvContent = [
           headers.join(","),
-          ...vocabulary.map((item) =>
-            [
-              item.word,
-              `"${item.definition.replace(/"/g, '""')}"`,
-              item.partOfSpeech,
-              item.language,
-              item.difficulty,
-              item.reviewCount,
-              item.addedAt.toISOString(),
-            ].join(",")
-          ),
+          ...vocabulary.map((item) => {
+            try {
+              const addedAtDate =
+                typeof item.addedAt === "string"
+                  ? new Date(item.addedAt)
+                  : item.addedAt;
+              return [
+                item.word,
+                `"${item.definition.replace(/"/g, '""')}"`,
+                item.partOfSpeech,
+                item.language,
+                item.difficulty,
+                item.reviewCount,
+                addedAtDate.toISOString(),
+              ].join(",");
+            } catch (error) {
+              return [
+                item.word,
+                `"${item.definition.replace(/"/g, '""')}"`,
+                item.partOfSpeech,
+                item.language,
+                item.difficulty,
+                item.reviewCount,
+                new Date().toISOString(), // 使用当前日期作为后备
+              ].join(",");
+            }
+          }),
         ].join("\n");
 
         const dataBlob = new Blob([csvContent], { type: "text/csv" });

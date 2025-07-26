@@ -35,6 +35,17 @@ export function VocabularyLearning() {
     exportVocabulary,
   } = useVocabulary();
 
+  // 安全的日期格式化函数
+  const formatDate = (date: Date | string | undefined): string => {
+    if (!date) return "Unknown";
+    try {
+      const dateObj = typeof date === "string" ? new Date(date) : date;
+      return dateObj.toLocaleDateString();
+    } catch (error) {
+      return "Invalid date";
+    }
+  };
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
@@ -273,11 +284,9 @@ export function VocabularyLearning() {
                     )}
                     <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
                       <span>Reviews: {item.reviewCount}</span>
-                      <span>Added: {item.addedAt.toLocaleDateString()}</span>
+                      <span>Added: {formatDate(item.addedAt)}</span>
                       {item.lastReviewed && (
-                        <span>
-                          Last: {item.lastReviewed.toLocaleDateString()}
-                        </span>
+                        <span>Last: {formatDate(item.lastReviewed)}</span>
                       )}
                     </div>
                   </div>

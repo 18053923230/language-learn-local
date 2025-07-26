@@ -39,9 +39,15 @@ export class WhisperClient {
         message: "Loading Whisper model...",
       });
 
-      // For now, we'll use a simplified approach
-      // In a real implementation, you would initialize whisper-turbo here
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate loading
+      // Simulate model loading with realistic timing
+      for (let i = 0; i <= 100; i += 10) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        this.updateProgress({
+          stage: "loading",
+          progress: i,
+          message: `Loading model... ${i}%`,
+        });
+      }
 
       this.isLoaded = true;
       this.updateProgress({
@@ -50,7 +56,7 @@ export class WhisperClient {
         message: "Whisper model loaded successfully",
       });
 
-      console.log("Whisper loaded successfully");
+      console.log("Whisper loaded successfully (simulation mode)");
     } catch (error) {
       console.error("Failed to load Whisper:", error);
       this.updateProgress({
@@ -81,47 +87,35 @@ export class WhisperClient {
         message: "Starting transcription...",
       });
 
-      // Simulate transcription process
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
+      // Simulate audio processing
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       this.updateProgress({
         stage: "processing",
-        progress: 50,
+        progress: 20,
         message: "Processing audio...",
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      this.updateProgress({
+        stage: "processing",
+        progress: 40,
+        message: "Analyzing speech patterns...",
+      });
 
-      // Create mock segments for demonstration
-      const segments: Subtitle[] = [
-        {
-          id: `${videoId}_segment_0`,
-          text: "Hello, this is a sample transcription.",
-          start: 0,
-          end: 3,
-          confidence: 0.95,
-          language,
-          videoId,
-        },
-        {
-          id: `${videoId}_segment_1`,
-          text: "The speech recognition is working.",
-          start: 3,
-          end: 6,
-          confidence: 0.88,
-          language,
-          videoId,
-        },
-        {
-          id: `${videoId}_segment_2`,
-          text: "This is just a demonstration.",
-          start: 6,
-          end: 9,
-          confidence: 0.92,
-          language,
-          videoId,
-        },
-      ];
+      // Generate realistic mock segments based on language
+      const segments: Subtitle[] = this.generateMockSegments(videoId, language);
+
+      // Simulate real-time transcription
+      for (let i = 0; i < segments.length; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        this.updateProgress({
+          stage: "processing",
+          progress: 40 + (i / segments.length) * 50,
+          message: `Transcribing... ${i + 1}/${segments.length} segments`,
+          currentSegment: i + 1,
+          totalSegments: segments.length,
+        });
+      }
 
       this.updateProgress({
         stage: "completed",
@@ -196,6 +190,56 @@ export class WhisperClient {
       });
       throw new Error("Failed to transcribe video");
     }
+  }
+
+  private generateMockSegments(videoId: string, language: string): Subtitle[] {
+    const mockData = {
+      en: [
+        "Hello, welcome to our language learning application.",
+        "This is a demonstration of speech recognition technology.",
+        "The system is designed to help you learn languages effectively.",
+        "You can upload videos and get accurate transcriptions.",
+        "Let's continue with the learning process.",
+      ],
+      zh: [
+        "你好，欢迎使用我们的语言学习应用。",
+        "这是语音识别技术的演示。",
+        "该系统旨在帮助您有效地学习语言。",
+        "您可以上传视频并获得准确的转录。",
+        "让我们继续学习过程。",
+      ],
+      ja: [
+        "こんにちは、言語学習アプリケーションへようこそ。",
+        "これは音声認識技術のデモンストレーションです。",
+        "このシステムは、効果的に言語を学ぶのに役立ちます。",
+        "動画をアップロードして、正確な文字起こしを取得できます。",
+        "学習プロセスを続けましょう。",
+      ],
+      ko: [
+        "안녕하세요, 언어 학습 애플리케이션에 오신 것을 환영합니다.",
+        "이것은 음성 인식 기술의 데모입니다.",
+        "이 시스템은 효과적으로 언어를 배우는 데 도움이 됩니다.",
+        "비디오를 업로드하고 정확한 전사를 받을 수 있습니다.",
+        "학습 과정을 계속해 보겠습니다.",
+      ],
+    };
+
+    const texts = mockData[language as keyof typeof mockData] || mockData.en;
+    const segments: Subtitle[] = [];
+
+    texts.forEach((text, index) => {
+      segments.push({
+        id: `${videoId}_segment_${index}`,
+        text,
+        start: index * 3,
+        end: (index + 1) * 3,
+        confidence: 0.85 + Math.random() * 0.1, // 0.85-0.95
+        language,
+        videoId,
+      });
+    });
+
+    return segments;
   }
 
   private updateProgress(progress: ProcessingProgress): void {

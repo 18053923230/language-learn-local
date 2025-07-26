@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { Subtitle } from "@/types/subtitle";
 import { Button } from "@/components/ui/button";
-import { Search, Play, Volume2 } from "lucide-react";
+import { Search, Play, Volume2, Edit, Download, Settings } from "lucide-react";
+import { SubtitleEditor } from "./subtitle-editor";
+import { SubtitleExporter } from "@/lib/subtitle-export";
 
 interface SubtitleListProps {
   onSubtitleClick?: (subtitle: Subtitle) => void;
@@ -15,9 +17,12 @@ export function SubtitleList({
   onSubtitleClick,
   onPlaySegment,
 }: SubtitleListProps) {
-  const { subtitles, currentSubtitle, playerState } = useAppStore();
+  const { subtitles, currentSubtitle, playerState, setSubtitles } =
+    useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredSubtitles, setFilteredSubtitles] = useState<Subtitle[]>([]);
+  const [editingSubtitle, setEditingSubtitle] = useState<Subtitle | null>(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
@@ -41,6 +46,24 @@ export function SubtitleList({
     onPlaySegment?.(subtitle.start, subtitle.end);
   };
 
+  const handleEditSubtitle = (subtitle: Subtitle) => {
+    setEditingSubtitle(subtitle);
+  };
+
+  const handleSaveSubtitle = (updatedSubtitle: Subtitle) => {
+    const updatedSubtitles = subtitles.map((sub) =>
+      sub.id === updatedSubtitle.id ? updatedSubtitle : sub
+    );
+    setSubtitles(updatedSubtitles);
+    setEditingSubtitle(null);
+  };
+
+  const handleExportSubtitles = (format: "srt" | "vtt" | "txt" | "json") => {
+    const content = SubtitleExporter.exportSubtitles(subtitles, { format });
+    const filename = SubtitleExporter.getFilename("video", format);
+    SubtitleExporter.downloadSubtitles(content, filename);
+  };
+
   const isCurrentSubtitle = (subtitle: Subtitle) => {
     if (!currentSubtitle) return false;
     return subtitle.id === currentSubtitle.id;
@@ -53,8 +76,22 @@ export function SubtitleList({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Search Bar */}
-      <div className="p-4 border-b">
+      {/* Header with Search and Export */}
+      <div className="p-4 border-b space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Subtitles</h3>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowExportDialog(!showExportDialog)}
+            >
+              <Download className="w-4 h-4 mr-1" />
+              Export
+            </Button>
+          </div>
+        </div>
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
@@ -65,6 +102,43 @@ export function SubtitleList({
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
+
+        {/* Export Dialog */}
+        {showExportDialog && (
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="text-sm font-medium mb-2">Export Format:</div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportSubtitles("srt")}
+              >
+                SRT
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportSubtitles("vtt")}
+              >
+                VTT
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportSubtitles("txt")}
+              >
+                TXT
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExportSubtitles("json")}
+              >
+                JSON
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Subtitle List */}
@@ -141,6 +215,18 @@ export function SubtitleList({
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
+                          handleEditSubtitle(subtitle);
+                        }}
+                        className="text-gray-500 hover:text-orange-600"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
                           // TODO: Implement text-to-speech for this subtitle
                         }}
                         className="text-gray-500 hover:text-green-600"
@@ -161,6 +247,20 @@ export function SubtitleList({
         {filteredSubtitles.length} of {subtitles.length} subtitles
         {searchTerm && ` matching "${searchTerm}"`}
       </div>
+
+      {/* Subtitle Editor Modal */}
+      {editingSubtitle && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <SubtitleEditor
+              subtitle={editingSubtitle}
+              onSave={handleSaveSubtitle}
+              onCancel={() => setEditingSubtitle(null)}
+              onPlaySegment={onPlaySegment}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

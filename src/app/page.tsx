@@ -5,8 +5,10 @@ import { FileUpload } from "@/components/file-upload";
 import { VideoPlayer } from "@/components/video-player";
 import { SubtitleList } from "@/components/subtitle-list";
 import { LearningPanel } from "@/components/learning-panel";
+import { TranscriptionProgress } from "@/components/transcription-progress";
 import { useAppStore } from "@/lib/store";
 import { StorageManager } from "@/lib/storage";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { Video } from "@/types/video";
 import { Subtitle } from "@/types/subtitle";
 import { VocabularyItem } from "@/types/vocabulary";
@@ -24,6 +26,15 @@ export default function HomePage() {
   } = useAppStore();
 
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Speech recognition hook
+  const {
+    isProcessing: isTranscribing,
+    progress: transcriptionProgress,
+    error: transcriptionError,
+    transcribeVideo,
+    cancelTranscription,
+  } = useSpeechRecognition();
 
   const handleFileSelect = async (file: File, language: string) => {
     setIsProcessing(true);
@@ -44,47 +55,8 @@ export default function HomePage() {
 
       setCurrentVideo(video);
 
-      // TODO: Implement speech recognition here
-      // For now, create mock subtitles
-      const mockSubtitles: Subtitle[] = [
-        {
-          id: "1",
-          text: "Hello, welcome to our language learning platform.",
-          start: 0,
-          end: 3,
-          confidence: 0.95,
-          language,
-          videoId: video.id,
-        },
-        {
-          id: "2",
-          text: "This is a sample subtitle for demonstration purposes.",
-          start: 3,
-          end: 6,
-          confidence: 0.88,
-          language,
-          videoId: video.id,
-        },
-        {
-          id: "3",
-          text: "You can upload your own video files to start learning.",
-          start: 6,
-          end: 9,
-          confidence: 0.92,
-          language,
-          videoId: video.id,
-        },
-      ];
-
-      setSubtitles(mockSubtitles);
-      video.processed = true;
-      setCurrentVideo(video);
-
-      // Save video and subtitles to local storage
+      // Save video to local storage first
       await StorageManager.saveVideo(video);
-      await StorageManager.saveSubtitles(mockSubtitles);
-
-      // Save video cache
       await StorageManager.saveVideoCache({
         videoId: video.id,
         videoName: video.name,
@@ -95,8 +67,32 @@ export default function HomePage() {
         cachedAt: new Date(),
         lastAccessed: new Date(),
       });
+
+      // Start speech recognition
+      const result = await transcribeVideo(file, video.id, language, {
+        model: "base", // Use base model for better accuracy
+        onComplete: async (whisperResult) => {
+          // Save subtitles to local storage
+          await StorageManager.saveSubtitles(whisperResult.segments);
+
+          // Update video as processed
+          const updatedVideo = { ...video, processed: true };
+          setCurrentVideo(updatedVideo);
+          await StorageManager.saveVideo(updatedVideo);
+        },
+        onError: (error) => {
+          console.error("Transcription error:", error);
+          // Keep video but mark as not processed
+          setCurrentVideo({ ...video, processed: false });
+        },
+      });
     } catch (error) {
       console.error("Error processing video:", error);
+      // If transcription fails, still show the video but without subtitles
+      const currentVideo = useAppStore.getState().currentVideo;
+      if (currentVideo) {
+        setCurrentVideo({ ...currentVideo, processed: false });
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -206,13 +202,22 @@ export default function HomePage() {
 
               <FileUpload onFileSelect={handleFileSelect} />
 
-              {isProcessing && (
+              {/* Transcription Progress */}
+              {(isTranscribing || transcriptionProgress) && (
+                <div className="mt-4">
+                  <TranscriptionProgress
+                    progress={transcriptionProgress}
+                    onCancel={cancelTranscription}
+                  />
+                </div>
+              )}
+
+              {/* Fallback processing indicator */}
+              {isProcessing && !isTranscribing && (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span className="text-blue-800">
-                      Processing video and generating subtitles...
-                    </span>
+                    <span className="text-blue-800">Processing video...</span>
                   </div>
                 </div>
               )}

@@ -73,7 +73,100 @@ pnpm add dexie
 pnpm add -D @types/node @types/react @types/react-dom
 ```
 
-**✅ 安装状态检查** (2024-01-26):
+#### 1.3 Shadcn/ui 配置 ⭐ 重要修复
+
+**问题**: 初始项目使用 Tailwind CSS v4，但 shadcn/ui 需要 v3 版本
+**解决方案**:
+
+```bash
+# 移除 v4 版本
+pnpm remove tailwindcss @tailwindcss/postcss
+
+# 安装 v3 版本
+pnpm add -D tailwindcss@^3.4.0 postcss autoprefixer
+
+# 初始化 shadcn/ui
+npx shadcn@latest init --yes
+
+# 添加标准组件
+npx shadcn@latest add button dialog select sonner
+```
+
+**关键配置文件**:
+
+```javascript
+// tailwind.config.js (标准 shadcn 配置)
+module.exports = {
+  darkMode: ["class"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        // ... 其他颜色变量
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+};
+```
+
+```javascript
+// postcss.config.mjs (ES 模块语法)
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+```
+
+```css
+/* src/app/globals.css (标准 shadcn 样式) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    /* ... 其他 CSS 变量 */
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    /* ... 深色模式变量 */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+```
+
+**✅ 安装状态检查** (2024-07-26):
 
 - [x] @ffmpeg/ffmpeg: ^0.12.15
 - [x] @ffmpeg/util: ^0.12.2
@@ -84,8 +177,10 @@ pnpm add -D @types/node @types/react @types/react-dom
 - [x] @heroicons/react: ^2.2.0
 - [x] 所有 Radix UI 组件库
 - [x] 所有 UI 工具库 (clsx, tailwind-merge 等)
+- [x] tailwindcss: 3.4.0 (正确版本)
+- [x] shadcn/ui 标准组件 (button, dialog, select, sonner)
 
-#### 1.3 项目结构搭建
+#### 1.4 项目结构搭建
 
 ```
 src/
@@ -94,21 +189,22 @@ src/
 │   ├── page.tsx
 │   ├── vocabulary/
 │   │   └── page.tsx ✅
-│   └── globals.css
+│   └── globals.css ✅ (已修复为 shadcn 标准样式)
 ├── components/
 │   ├── ui/
-│   │   ├── button.tsx ✅
-│   │   ├── dialog.tsx ❌
-│   │   ├── select.tsx ❌
-│   │   └── toast.tsx ❌
-│   ├── video-player.tsx ❌
-│   ├── subtitle-list.tsx ❌
-│   ├── learning-panel.tsx ❌
+│   │   ├── button.tsx ✅ (shadcn 标准版本)
+│   │   ├── dialog.tsx ✅ (shadcn 标准版本)
+│   │   ├── select.tsx ✅ (shadcn 标准版本)
+│   │   └── sonner.tsx ✅ (替代 toast)
+│   ├── video-player.tsx ✅
+│   ├── subtitle-list.tsx ✅
+│   ├── learning-panel.tsx ✅
 │   ├── vocabulary-manager.tsx ✅
-│   └── file-upload.tsx ❌
+│   └── file-upload.tsx ✅
 ├── lib/
-│   ├── utils.ts ✅
+│   ├── utils.ts ✅ (shadcn 标准版本)
 │   ├── store.ts ✅
+│   ├── storage.ts ✅
 │   ├── whisper-client.ts ❌
 │   ├── audio-processor.ts ❌
 │   └── dictionary-api.ts ❌
@@ -126,24 +222,13 @@ src/
 
 - 基础类型定义 (video.ts, subtitle.ts, vocabulary.ts)
 - 状态管理 (store.ts)
-- 工具函数 (utils.ts)
-- UI 组件 (button.tsx)
+- 工具函数 (utils.ts) - shadcn 标准版本
+- UI 组件 (button.tsx, dialog.tsx, select.tsx, sonner.tsx) - shadcn 标准版本
 - 词汇管理器 (vocabulary-manager.tsx)
 - 词汇页面 (vocabulary/page.tsx)
-
-**✅ 阶段二已完成文件**:
-
-- ✅ UI 组件 (dialog.tsx, select.tsx, toast.tsx, button.tsx)
-- ✅ 核心功能组件 (video-player.tsx, subtitle-list.tsx, learning-panel.tsx, file-upload.tsx)
-- ✅ 主页面布局 (page.tsx)
-- ✅ 词汇页面 (vocabulary/page.tsx)
-
-**✅ 阶段三已完成文件**:
-
-- ✅ 本地存储管理 (storage.ts)
-- ✅ 视频播放器完善 (video-player.tsx)
-- ✅ 播放历史记录集成
-- ✅ 视频缓存功能
+- 本地存储管理 (storage.ts)
+- 核心功能组件 (video-player.tsx, subtitle-list.tsx, learning-panel.tsx, file-upload.tsx)
+- 主页面布局 (page.tsx)
 
 **❌ 待创建文件**:
 
@@ -225,7 +310,6 @@ interface AppState {
 - ffmpeg.wasm 集成
 - 视频转音频
 - 音频格式优化
-  ![1753545789917](image/PROJECT_PLAN/1753545789917.png)
 
 #### 4.3 识别流程
 
@@ -321,22 +405,45 @@ interface Subtitle {
 
 ## 时间安排
 
-| 阶段   | 任务        | 预计时间 | 优先级 |
-| ------ | ----------- | -------- | ------ |
-| 阶段一 | 项目初始化  | 1-2 天   | 高     |
-| 阶段二 | UI 框架搭建 | 2-3 天   | 高     |
-| 阶段三 | 视频播放    | 1-2 天   | 高     |
-| 阶段四 | 语音识别    | 3-5 天   | 最高   |
-| 阶段五 | 字幕系统    | 2-3 天   | 高     |
-| 阶段六 | 学习功能    | 3-4 天   | 中     |
-| 阶段七 | 数据持久化  | 1-2 天   | 中     |
-| 阶段八 | 优化完善    | 2-3 天   | 低     |
+| 阶段   | 任务        | 预计时间 | 实际时间 | 状态      | 优先级 |
+| ------ | ----------- | -------- | -------- | --------- | ------ |
+| 阶段一 | 项目初始化  | 1-2 天   | 1 天     | ✅ 完成   | 高     |
+| 阶段二 | UI 框架搭建 | 2-3 天   | 1 天     | ✅ 完成   | 高     |
+| 阶段三 | 视频播放    | 1-2 天   | 1 天     | ✅ 完成   | 高     |
+| 阶段四 | 语音识别    | 3-5 天   | -        | 🔄 进行中 | 最高   |
+| 阶段五 | 字幕系统    | 2-3 天   | -        | ⏳ 待开始 | 高     |
+| 阶段六 | 学习功能    | 3-4 天   | -        | ⏳ 待开始 | 中     |
+| 阶段七 | 数据持久化  | 1-2 天   | -        | ⏳ 待开始 | 中     |
+| 阶段八 | 优化完善    | 2-3 天   | -        | ⏳ 待开始 | 低     |
 
 **总计预计时间：15-24 天**
+**当前进度：3/8 阶段完成，预计剩余时间：12-21 天**
 
 ## 技术难点与解决方案
 
-### 1. 语音识别性能
+### 1. UI 框架配置 ⭐ 已解决
+
+**难点**: Tailwind CSS v4 与 shadcn/ui 不兼容
+**解决方案**:
+
+- 降级到 Tailwind CSS v3.4.0
+- 使用 shadcn/ui 标准配置
+- 修复 PostCSS 配置文件语法（ES 模块 vs CommonJS）
+- 使用标准 CSS 变量和 @layer 语法
+
+**关键修复**:
+
+```bash
+# 版本降级
+pnpm remove tailwindcss @tailwindcss/postcss
+pnpm add -D tailwindcss@^3.4.0 postcss autoprefixer
+
+# 标准配置
+npx shadcn@latest init --yes
+npx shadcn@latest add button dialog select sonner
+```
+
+### 2. 语音识别性能
 
 **难点**: WASM 在浏览器中运行计算密集型任务
 **解决方案**:
@@ -345,7 +452,7 @@ interface Subtitle {
 - 选择合适的模型大小(tiny/base)
 - 实现进度显示和取消功能
 
-### 2. 大文件处理
+### 3. 大文件处理
 
 **难点**: 视频文件可能很大，影响处理速度
 **解决方案**:
@@ -354,7 +461,7 @@ interface Subtitle {
 - 压缩音频
 - 本地缓存
 
-### 3. 浏览器兼容性
+### 4. 浏览器兼容性
 
 **难点**: WASM、Web Worker 等新特性兼容性
 **解决方案**:
@@ -432,16 +539,39 @@ interface Subtitle {
 
 ### 更新日志
 
-- **2024-01-XX**: 项目计划创建
-- **待更新**: 各阶段完成情况
-- **待更新**: 技术难点解决记录
-- **待更新**: 性能优化记录
+- **2024-01-26**: 项目计划创建
+- **2024-07-26**: 阶段一完成 - 项目初始化与环境搭建
+  - ✅ 项目创建和基础依赖安装
+  - ✅ Shadcn/ui 配置修复（Tailwind CSS v4 → v3）
+  - ✅ 标准组件安装（button, dialog, select, sonner）
+  - ✅ 配置文件标准化（tailwind.config.js, postcss.config.mjs, globals.css）
+- **2024-07-26**: 阶段二完成 - 基础 UI 框架搭建
+  - ✅ 主页面布局实现
+  - ✅ 核心组件开发
+  - ✅ 状态管理设计
+- **2024-07-26**: 阶段三完成 - 视频播放功能
+  - ✅ 文件上传功能
+  - ✅ 视频播放器集成
+  - ✅ 本地存储集成
 
 ### 技术决策记录
 
-- **待记录**: 技术选型原因
-- **待记录**: 架构设计考虑
-- **待记录**: 性能优化策略
+- **技术选型原因**:
+
+  - 选择 Tailwind CSS v3 而非 v4：shadcn/ui 兼容性要求
+  - 选择 shadcn/ui：提供标准化的组件库，避免自定义样式问题
+  - 选择 Sonner 替代 Toast：更现代的 toast 通知组件
+
+- **架构设计考虑**:
+
+  - 使用 Zustand 进行状态管理：轻量级、TypeScript 友好
+  - 使用 Dexie.js 进行本地存储：IndexedDB 的友好封装
+  - 使用 Radix UI 作为基础组件：无样式、可访问性好的 primitives
+
+- **性能优化策略**:
+  - 使用 Web Worker 处理语音识别：避免阻塞主线程
+  - 实现视频缓存机制：减少重复下载
+  - 使用 IndexedDB 存储大文件：突破 localStorage 限制
 
 ---
 

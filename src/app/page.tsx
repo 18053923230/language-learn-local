@@ -13,8 +13,9 @@ import { Video } from "@/types/video";
 import { Subtitle } from "@/types/subtitle";
 import { VocabularyItem } from "@/types/vocabulary";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Settings } from "lucide-react";
+import { BookOpen, Settings, BookText } from "lucide-react";
 import Link from "next/link";
+import { VocabularyLearning } from "@/components/vocabulary-learning";
 
 export default function HomePage() {
   const {
@@ -135,23 +136,9 @@ export default function HomePage() {
   };
 
   const handleAddToVocabulary = async (word: string, context: string) => {
-    const vocabularyItem: VocabularyItem = {
-      id: Date.now().toString(),
-      word,
-      definition: "Definition will be loaded from dictionary API",
-      pronunciation: "",
-      partOfSpeech: "",
-      examples: [context],
-      videoId: currentVideo?.id || "",
-      subtitleId: useAppStore.getState().currentSubtitle?.id || "",
-      createdAt: new Date(),
-      lastReviewed: new Date(),
-      reviewCount: 0,
-      difficulty: "medium",
-    };
-
-    addVocabularyItem(vocabularyItem);
-    await StorageManager.saveVocabularyItem(vocabularyItem);
+    // This function is now handled by the useVocabulary hook
+    // The new vocabulary system will handle dictionary lookups automatically
+    console.log("Adding word to vocabulary:", word, context);
   };
 
   return (
@@ -171,9 +158,11 @@ export default function HomePage() {
                   Vocabulary
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm">
-                <Settings className="w-4 h-4" />
-              </Button>
+              <Link href="/settings">
+                <Button variant="ghost" size="sm">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

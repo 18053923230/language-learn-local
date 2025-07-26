@@ -33,6 +33,7 @@ interface AppActions {
   setSubtitles: (subtitles: Subtitle[]) => void;
   setCurrentSubtitle: (subtitle: Subtitle | null) => void;
   // 词汇相关
+  setVocabulary: (vocabulary: VocabularyItem[]) => void;
   addVocabularyItem: (item: VocabularyItem) => void;
   removeVocabularyItem: (id: string) => void;
   updateVocabularyItem: (id: string, updates: Partial<VocabularyItem>) => void;
@@ -68,6 +69,8 @@ export const useAppStore = create<AppState & AppActions>((set) => ({
   setCurrentSubtitle: (subtitle) => set({ currentSubtitle: subtitle }),
 
   // 词汇相关
+  setVocabulary: (vocabulary) => set({ vocabulary }),
+
   addVocabularyItem: (item) =>
     set((state) => ({
       vocabulary: [...state.vocabulary, item],

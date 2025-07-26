@@ -2,15 +2,14 @@ export interface VocabularyItem {
   id: string;
   word: string;
   definition: string;
-  pronunciation: string;
+  example?: string;
   partOfSpeech: string;
-  examples: string[];
-  videoId: string;
-  subtitleId: string;
-  createdAt: Date;
-  lastReviewed: Date;
+  language: string;
+  addedAt: Date;
+  lastReviewed?: Date;
   reviewCount: number;
   difficulty: "easy" | "medium" | "hard";
+  notes?: string;
 }
 
 export interface DictionaryResponse {

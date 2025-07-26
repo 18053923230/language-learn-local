@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +19,7 @@ import {
   Play,
   RotateCcw,
 } from "lucide-react";
+import { DictionaryAPI } from "@/lib/dictionary-api";
 
 interface LearningPanelProps {
   onPlaySegment?: (start: number, end: number) => void;
@@ -35,11 +36,63 @@ export function LearningPanel({
     "normal" | "repeat" | "slow"
   >("normal");
   const [repeatCount, setRepeatCount] = useState(3);
+  const [wordData, setWordData] = useState<{
+    definition: string;
+    partOfSpeech: string;
+    example?: string;
+    phonetic?: string;
+  } | null>(null);
+  const [isLoadingWord, setIsLoadingWord] = useState(false);
 
   const handleWordClick = (word: string) => {
     setSelectedWord(word);
-    // TODO: Show word definition and pronunciation
+    setWordData(null);
+    setIsLoadingWord(true);
   };
+
+  // 获取单词数据
+  useEffect(() => {
+    const fetchWordData = async () => {
+      if (!selectedWord) {
+        setWordData(null);
+        setIsLoadingWord(false);
+        return;
+      }
+
+      try {
+        setIsLoadingWord(true);
+        const entries = await DictionaryAPI.lookupWord(selectedWord);
+
+        if (entries.length > 0) {
+          const entry = entries[0];
+          const firstMeaning = entry.meanings[0];
+          const firstDefinition = firstMeaning.definitions[0];
+
+          setWordData({
+            definition: firstDefinition.definition,
+            partOfSpeech: firstMeaning.partOfSpeech,
+            example: firstDefinition.example,
+            phonetic: entry.phonetic,
+          });
+        } else {
+          setWordData({
+            definition: "Definition not found",
+            partOfSpeech: "Unknown",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch word data:", error);
+        setWordData({
+          definition: "Failed to load definition",
+          partOfSpeech: "Unknown",
+        });
+      } finally {
+        setIsLoadingWord(false);
+      }
+    };
+
+    fetchWordData();
+  }, [selectedWord]);
 
   const handlePlaySegment = () => {
     if (currentSubtitle && onPlaySegment) {
@@ -199,14 +252,23 @@ export function LearningPanel({
           <div className="space-y-3">
             <div className="p-3 bg-blue-50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-blue-900">
-                  {selectedWord}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="font-medium text-blue-900">
+                    {selectedWord}
+                  </span>
+                  {wordData?.phonetic && (
+                    <span className="text-sm text-gray-600 font-mono">
+                      /{wordData.phonetic}/
+                    </span>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    // TODO: Implement pronunciation
+                    if (selectedWord) {
+                      DictionaryAPI.speakWord(selectedWord);
+                    }
                   }}
                 >
                   <Volume2 className="w-4 h-4" />
@@ -214,14 +276,54 @@ export function LearningPanel({
               </div>
 
               <div className="text-sm text-blue-800">
-                <p className="mb-1">
-                  <span className="font-medium">Definition:</span>
-                  <span className="ml-1 text-gray-600">Loading...</span>
-                </p>
-                <p>
-                  <span className="font-medium">Part of Speech:</span>
-                  <span className="ml-1 text-gray-600">Loading...</span>
-                </p>
+                {isLoadingWord ? (
+                  <>
+                    <p className="mb-1">
+                      <span className="font-medium">Definition:</span>
+                      <span className="ml-1 text-gray-600">Loading...</span>
+                    </p>
+                    <p>
+                      <span className="font-medium">Part of Speech:</span>
+                      <span className="ml-1 text-gray-600">Loading...</span>
+                    </p>
+                  </>
+                ) : wordData ? (
+                  <>
+                    <p className="mb-1">
+                      <span className="font-medium">Definition:</span>
+                      <span className="ml-1 text-gray-600">
+                        {wordData.definition}
+                      </span>
+                    </p>
+                    <p className="mb-1">
+                      <span className="font-medium">Part of Speech:</span>
+                      <span className="ml-1 text-gray-600">
+                        {wordData.partOfSpeech}
+                      </span>
+                    </p>
+                    {wordData.example && (
+                      <p>
+                        <span className="font-medium">Example:</span>
+                        <span className="ml-1 text-gray-600 italic">
+                          "{wordData.example}"
+                        </span>
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="mb-1">
+                      <span className="font-medium">Definition:</span>
+                      <span className="ml-1 text-gray-600">
+                        Click a word to see definition
+                      </span>
+                    </p>
+                    <p>
+                      <span className="font-medium">Part of Speech:</span>
+                      <span className="ml-1 text-gray-600">-</span>
+                    </p>
+                  </>
+                )}
               </div>
             </div>
 

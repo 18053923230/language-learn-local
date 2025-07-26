@@ -221,59 +221,57 @@ export default function HomePage() {
           </div>
         ) : (
           // Main Learning Interface
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            {/* Left Column - Video Player */}
-            <div className="col-span-1 md:col-span-8 flex flex-col">
-              {/* 
-                IMPROVEMENT: Replaced fixed height with `aspect-video`.
-                This makes the video player responsive and maintains a 16:9 aspect ratio.
-              */}
-              <div className="bg-black rounded-lg overflow-hidden w-full aspect-video">
-                <VideoPlayer
-                  url={currentVideo.url}
-                  onProgress={handleVideoProgress}
-                  onDuration={handleDurationUpdate}
-                />
+          <div className="space-y-6">
+            {/* Video Section */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+              {/* Video Player */}
+              <div className="col-span-1 md:col-span-8">
+                <div className="bg-black rounded-lg overflow-hidden w-full aspect-video">
+                  <VideoPlayer
+                    url={currentVideo.url}
+                    onProgress={handleVideoProgress}
+                    onDuration={handleDurationUpdate}
+                  />
+                </div>
+
+                {/* Video Info */}
+                <div className="mt-4 p-4 bg-white rounded-lg shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
+                    {currentVideo.name}
+                  </h3>
+                  <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                    <span>Language: {currentVideo.language}</span>
+                    <span>
+                      Duration: {Math.floor(currentVideo.duration / 60)}m{" "}
+                      {Math.round(currentVideo.duration % 60)}s
+                    </span>
+                    <span>
+                      Size: {(currentVideo.size / 1024 / 1024).toFixed(1)} MB
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              {/* Video Info */}
-              <div className="mt-4 p-4 bg-white rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
-                  {currentVideo.name}
-                </h3>
-                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
-                  <span>Language: {currentVideo.language}</span>
-                  <span>
-                    Duration: {Math.floor(currentVideo.duration / 60)}m{" "}
-                    {Math.round(currentVideo.duration % 60)}s
-                  </span>
-                  <span>
-                    Size: {(currentVideo.size / 1024 / 1024).toFixed(1)} MB
-                  </span>
+              {/* Subtitles Panel */}
+              <div className="col-span-1 md:col-span-4">
+                <div
+                  className="bg-white rounded-lg shadow-sm overflow-hidden"
+                  style={{ height: "550px" }}
+                >
+                  <SubtitleList
+                    onSubtitleClick={(subtitle) => setCurrentSubtitle(subtitle)}
+                    onPlaySegment={handlePlaySegment}
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Subtitles and Learning Panel */}
-            <div className="col-span-1 md:col-span-4 flex flex-col space-y-6">
-              <div
-                className="bg-white rounded-lg shadow-sm overflow-hidden"
-                style={{ height: "300px" }}
-              >
-                <SubtitleList
-                  onSubtitleClick={(subtitle) => setCurrentSubtitle(subtitle)}
-                  onPlaySegment={handlePlaySegment}
-                />
-              </div>
-              <div
-                className="bg-white rounded-lg shadow-sm overflow-hidden"
-                style={{ height: "200px" }}
-              >
-                <LearningPanel
-                  onPlaySegment={handlePlaySegment}
-                  onAddToVocabulary={handleAddToVocabulary}
-                />
-              </div>
+            {/* Learning Panel - Below Video */}
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <LearningPanel
+                onPlaySegment={handlePlaySegment}
+                onAddToVocabulary={handleAddToVocabulary}
+              />
             </div>
           </div>
         )}

@@ -714,6 +714,17 @@ private generateMockSegments(videoId: string, language: string): Subtitle[] {
   - ✅ 修复日期对象序列化/反序列化问题
   - ✅ 添加安全的日期处理函数
   - ✅ 修复 toLocaleDateString 错误
+- **2024-07-26**: 布局优化 - 学习面板位置调整
+  - ✅ 将 LearningPanel 移动到视频下方
+  - ✅ 优化字幕面板高度为 400px
+  - ✅ 改善整体布局结构和视觉层次
+- **2024-07-26**: 功能修复 - 学习面板单词查询
+  - ✅ 修复 Word Learning 部分的 Loading 问题
+  - ✅ 集成 DictionaryAPI 获取单词定义和词性
+  - ✅ 添加单词发音功能
+  - ✅ 显示单词例句
+  - ✅ 添加错误处理和加载状态
+  - ✅ 添加音标显示功能
 
 ### 技术决策记录
 

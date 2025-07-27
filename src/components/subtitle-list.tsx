@@ -4,10 +4,19 @@ import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { Subtitle } from "@/types/subtitle";
 import { Button } from "@/components/ui/button";
-import { Search, Play, Volume2, Edit, Download, Settings } from "lucide-react";
+import {
+  Search,
+  Play,
+  Volume2,
+  Edit,
+  Download,
+  Settings,
+  Trash2,
+} from "lucide-react";
 import { SubtitleEditor } from "./subtitle-editor";
 import { SubtitleExporter } from "@/lib/subtitle-export";
 import { SubtitleSaveButton } from "./subtitle-save-button";
+import { toast } from "sonner";
 
 interface SubtitleListProps {
   onSubtitleClick?: (subtitle: Subtitle) => void;
@@ -44,7 +53,10 @@ export function SubtitleList({
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    const ms = Math.round((seconds % 1) * 1000);
+    return `${mins}:${secs.toString().padStart(2, "0")}.${ms
+      .toString()
+      .padStart(3, "0")}`;
   };
 
   const handleSubtitleClick = (subtitle: Subtitle) => {
@@ -68,6 +80,21 @@ export function SubtitleList({
     const content = SubtitleExporter.exportSubtitles(subtitles, { format });
     const filename = SubtitleExporter.getFilename("video", format);
     SubtitleExporter.downloadSubtitles(content, filename);
+  };
+
+  const handleDeleteSubtitle = (id: string) => {
+    const subtitle = subtitles.find((sub) => sub.id === id);
+    if (!subtitle) return;
+
+    const confirmed = confirm(
+      `Are you sure you want to delete this subtitle?\n\n"${subtitle.text}"\n\nThis action cannot be undone.`
+    );
+
+    if (confirmed) {
+      setSubtitles(subtitles.filter((sub) => sub.id !== id));
+      setEditingSubtitle(null);
+      toast.success("Subtitle deleted successfully");
+    }
   };
 
   const isCurrentSubtitle = (subtitle: Subtitle) => {
@@ -238,6 +265,18 @@ export function SubtitleList({
                         className="h-8 w-8 p-0 hover:bg-orange-100 text-orange-600"
                       >
                         <Edit className="w-3 h-3" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSubtitle(subtitle.id);
+                        }}
+                        className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
+                      >
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>

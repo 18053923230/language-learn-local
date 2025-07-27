@@ -270,10 +270,12 @@ export function VideoPlayer({
   }, []);
 
   const formatTime = (seconds: number) => {
-    if (isNaN(seconds) || seconds < 0) return "0:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    const ms = Math.round((seconds % 1) * 1000);
+    return `${mins}:${secs.toString().padStart(2, "0")}.${ms
+      .toString()
+      .padStart(3, "0")}`;
   };
 
   return (

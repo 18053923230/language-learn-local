@@ -304,7 +304,7 @@ export function VocabularyLearning() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {vocabulary.map((item) => (
               <div
                 key={item.id}
@@ -314,7 +314,7 @@ export function VocabularyLearning() {
                     : "bg-white"
                 }`}
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col h-full">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-3">
                       <h4 className="text-xl font-bold text-gray-900">
@@ -332,11 +332,11 @@ export function VocabularyLearning() {
                         <Volume2 className="w-4 h-4" />
                       </Button>
                     </div>
-                    <p className="text-gray-700 mb-2 leading-relaxed">
+                    <p className="text-gray-700 mb-2 leading-relaxed line-clamp-2">
                       {item.definition}
                     </p>
                     {item.example && (
-                      <p className="text-gray-600 italic bg-gray-50 p-3 rounded-lg mb-3">
+                      <p className="text-gray-600 italic bg-gray-50 p-3 rounded-lg mb-3 line-clamp-2">
                         "{item.example}"
                       </p>
                     )}
@@ -349,16 +349,10 @@ export function VocabularyLearning() {
                         <span className="w-2 h-2 bg-green-400 rounded-full"></span>
                         <span>Added: {formatDate(item.addedAt)}</span>
                       </span>
-                      {item.lastReviewed && (
-                        <span className="flex items-center space-x-1">
-                          <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
-                          <span>Last: {formatDate(item.lastReviewed)}</span>
-                        </span>
-                      )}
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end space-y-3 ml-4">
+                  <div className="flex flex-col space-y-3">
                     {/* Difficulty Buttons */}
                     <div className="flex space-x-1">
                       <Button
@@ -367,7 +361,7 @@ export function VocabularyLearning() {
                         }
                         size="sm"
                         onClick={() => handleDifficultyChange(item.id, "easy")}
-                        className={`text-xs px-3 py-1 h-8 ${
+                        className={`text-xs px-3 py-1 h-8 flex-1 ${
                           item.difficulty === "easy"
                             ? "bg-green-500 hover:bg-green-600 text-white"
                             : "border-green-200 text-green-600 hover:bg-green-50"
@@ -383,7 +377,7 @@ export function VocabularyLearning() {
                         onClick={() =>
                           handleDifficultyChange(item.id, "medium")
                         }
-                        className={`text-xs px-3 py-1 h-8 ${
+                        className={`text-xs px-3 py-1 h-8 flex-1 ${
                           item.difficulty === "medium"
                             ? "bg-yellow-500 hover:bg-yellow-600 text-white"
                             : "border-yellow-200 text-yellow-600 hover:bg-yellow-50"
@@ -397,7 +391,7 @@ export function VocabularyLearning() {
                         }
                         size="sm"
                         onClick={() => handleDifficultyChange(item.id, "hard")}
-                        className={`text-xs px-3 py-1 h-8 ${
+                        className={`text-xs px-3 py-1 h-8 flex-1 ${
                           item.difficulty === "hard"
                             ? "bg-red-500 hover:bg-red-600 text-white"
                             : "border-red-200 text-red-600 hover:bg-red-50"
@@ -426,50 +420,50 @@ export function VocabularyLearning() {
                         ×
                       </Button>
                     </div>
+
+                    {/* Notes Section */}
+                    {selectedWord === item.id && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <Textarea
+                          placeholder="Add your personal notes about this word..."
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          rows={2}
+                          className="education-input mb-3"
+                        />
+                        <div className="flex space-x-3">
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveNotes(item.id)}
+                            className="education-button"
+                          >
+                            Save Notes
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedWord(null)}
+                            className="education-button-secondary"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show Notes Button */}
+                    {!selectedWord && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedWord(item.id)}
+                        className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                      >
+                        {item.notes ? "Edit Notes" : "Add Notes"}
+                      </Button>
+                    )}
                   </div>
                 </div>
-
-                {/* Notes Section */}
-                {selectedWord === item.id && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <Textarea
-                      placeholder="Add your personal notes about this word..."
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={3}
-                      className="education-input mb-3"
-                    />
-                    <div className="flex space-x-3">
-                      <Button
-                        size="sm"
-                        onClick={() => handleSaveNotes(item.id)}
-                        className="education-button"
-                      >
-                        Save Notes
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedWord(null)}
-                        className="education-button-secondary"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Show Notes Button */}
-                {!selectedWord && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedWord(item.id)}
-                    className="mt-3 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                  >
-                    {item.notes ? "Edit Notes" : "Add Notes"}
-                  </Button>
-                )}
               </div>
             ))}
           </div>

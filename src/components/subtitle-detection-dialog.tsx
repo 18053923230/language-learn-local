@@ -41,10 +41,13 @@ export function SubtitleDetectionDialog({
     }
   };
 
-  const formatDuration = (seconds: number) => {
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    const ms = Math.round((seconds % 1) * 1000);
+    return `${mins}:${secs.toString().padStart(2, "0")}.${ms
+      .toString()
+      .padStart(3, "0")}`;
   };
 
   const formatDate = (date: Date) => {
@@ -103,7 +106,7 @@ export function SubtitleDetectionDialog({
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium">Duration:</span>
                 <span className="text-gray-900 font-semibold">
-                  {formatDuration(record.duration)}
+                  {formatTime(record.duration)}
                 </span>
               </div>
               <div className="flex justify-between items-center">

@@ -49,7 +49,14 @@ export function LearningPanel({
   const repeatTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleWordClick = (word: string) => {
-    setSelectedWord(word);
+    // Clean the word by removing punctuation marks
+    const cleanWord = word.replace(/[.,!?;:'"()[\]{}]/g, "").trim();
+
+    if (!cleanWord) {
+      return; // Don't process empty words
+    }
+
+    setSelectedWord(cleanWord);
     setWordData(null);
     setIsLoadingWord(true);
   };
@@ -166,7 +173,10 @@ export function LearningPanel({
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    const ms = Math.round((seconds % 1) * 1000);
+    return `${mins}:${secs.toString().padStart(2, "0")}.${ms
+      .toString()
+      .padStart(3, "0")}`;
   };
 
   const splitTextIntoWords = (text: string) => {

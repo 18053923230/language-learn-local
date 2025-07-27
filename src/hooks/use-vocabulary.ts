@@ -28,10 +28,17 @@ export function useVocabulary() {
       setError(null);
 
       try {
+        // Clean the word by removing punctuation marks
+        const cleanWord = word.replace(/[.,!?;:'"()[\]{}]/g, "").trim();
+
+        if (!cleanWord) {
+          throw new Error("Invalid word after cleaning");
+        }
+
         // Check if word already exists
         const existingWord = vocabulary.find(
           (item) =>
-            item.word.toLowerCase() === word.toLowerCase() &&
+            item.word.toLowerCase() === cleanWord.toLowerCase() &&
             item.language === language
         );
 
@@ -41,7 +48,7 @@ export function useVocabulary() {
 
         // Look up word definition
         const dictionaryEntries = await DictionaryAPI.lookupWord(
-          word,
+          cleanWord,
           language
         );
 
@@ -54,15 +61,15 @@ export function useVocabulary() {
         const firstDefinition = firstMeaning.definitions[0];
 
         const newVocabularyItem: VocabularyItem = {
-          id: `${word}_${Date.now()}`,
-          word: word.toLowerCase(),
+          id: `${cleanWord}_${Date.now()}`,
+          word: cleanWord.toLowerCase(),
           definition: firstDefinition.definition,
           example: firstDefinition.example,
           partOfSpeech: firstMeaning.partOfSpeech,
           language,
           addedAt: new Date(),
           reviewCount: 0,
-          difficulty: DictionaryAPI.calculateWordDifficulty(word),
+          difficulty: DictionaryAPI.calculateWordDifficulty(cleanWord),
         };
 
         setVocabulary([...vocabulary, newVocabularyItem]);

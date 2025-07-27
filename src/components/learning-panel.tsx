@@ -18,6 +18,7 @@ import {
   Settings,
   Play,
   RotateCcw,
+  Square,
 } from "lucide-react";
 import { DictionaryAPI } from "@/lib/dictionary-api";
 
@@ -172,301 +173,328 @@ export function LearningPanel({
     return text.split(/\s+/).filter((word) => word.length > 0);
   };
 
+  const vocabularyCount = vocabulary.length;
+  const currentVideoStatus =
+    playerState.currentTime > 0
+      ? formatTime(playerState.currentTime)
+      : "Not started";
+  const playbackSpeed =
+    playerState.playbackRate > 0 ? `${playerState.playbackRate}x` : "Normal";
+
+  const handleExportVocabulary = () => {
+    // TODO: Implement export functionality
+    console.log("Export Vocabulary clicked");
+  };
+
+  const handleResetProgress = () => {
+    // TODO: Implement reset functionality
+    console.log("Reset Progress clicked");
+  };
+
   return (
-    <div className="h-full flex flex-col bg-white border-l">
+    <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="p-4 border-b bg-gray-50">
+      <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-xl font-bold text-gray-900 flex items-center">
+            <span className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mr-3 shadow-sm">
+              <span className="text-white text-sm font-bold">🎯</span>
+            </span>
             Learning Tools
           </h3>
-          <Button variant="ghost" size="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:bg-white/50 rounded-full"
+          >
             <Settings className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      {/* Current Subtitle */}
-      {currentSubtitle && (
-        <div className="p-4 border-b">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500 font-mono">
-                {formatTime(currentSubtitle.start)} -{" "}
-                {formatTime(currentSubtitle.end)}
+      {/* Content */}
+      <div className="flex-1 p-6 space-y-6">
+        {/* Current Subtitle Learning */}
+        {currentSubtitle && (
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+            {/* <h4 className="text-lg font-semibold text-gray-800 flex items-center mb-3">
+              <span className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                <span className="text-blue-600 text-xs">📝</span>
               </span>
-              {currentSubtitle.confidence && (
-                <span
-                  className={`text-xs px-2 py-1 rounded ${
-                    currentSubtitle.confidence > 0.8
-                      ? "bg-green-100 text-green-800"
-                      : currentSubtitle.confidence > 0.6
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {Math.round(currentSubtitle.confidence * 100)}% confidence
+              Current Subtitle
+            </h4> */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 font-mono">
+                  {formatTime(currentSubtitle.start)} -{" "}
+                  {formatTime(currentSubtitle.end)}
                 </span>
-              )}
-            </div>
-
-            <div className="text-sm leading-relaxed">
-              {splitTextIntoWords(currentSubtitle.text).map((word, index) => (
-                <span
-                  key={index}
-                  className={`cursor-pointer hover:bg-blue-100 rounded px-1 ${
-                    selectedWord === word ? "bg-blue-200" : ""
-                  }`}
-                  onClick={() => handleWordClick(word)}
-                >
-                  {word}
-                </span>
-              ))}
+                {currentSubtitle.confidence && (
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      currentSubtitle.confidence > 0.8
+                        ? "bg-green-100 text-green-700"
+                        : currentSubtitle.confidence > 0.6
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {Math.round(currentSubtitle.confidence * 100)}% confidence
+                  </span>
+                )}
+              </div>
+              <div className="text-sm leading-relaxed bg-white p-3 rounded-lg border border-blue-200">
+                {splitTextIntoWords(currentSubtitle.text).map((word, index) => (
+                  <span
+                    key={index}
+                    className={`cursor-pointer hover:bg-blue-100 rounded px-1 transition-colors ${
+                      selectedWord === word ? "bg-blue-200" : ""
+                    }`}
+                    onClick={() => handleWordClick(word)}
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Playback Controls */}
-      <div className="p-4 border-b">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">
-          Playback Controls
-        </h4>
-
-        <div className="space-y-3">
-          <div className="flex items-center space-x-2">
+        {/* Playback Controls */}
+        <div className="space-y-4">
+          {/* <h4 className="text-lg font-semibold text-gray-800 flex items-center">
+            <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mr-2">
+              <span className="text-green-600 text-xs">▶️</span>
+            </span>
+            Playback Controls
+          </h4> */}
+          <div className="space-y-4">
             <Button
-              variant="outline"
-              size="sm"
               onClick={handlePlaySegment}
-              disabled={isRepeating}
-              className="flex-1"
+              disabled={!currentSubtitle || isRepeating}
+              className="w-full h-12 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
             >
               {isRepeating ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                  {repeatProgress}/{repeatCount}
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Repeating ({repeatProgress}/{repeatCount})
                 </>
               ) : (
                 <>
-                  <Play className="w-4 h-4 mr-2" />
+                  <Play className="w-5 h-5 mr-2" />
                   Play Segment
                 </>
               )}
             </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={isRepeating ? stopRepeatPlayback : handlePlaySegment}
-              className={
-                isRepeating ? "bg-red-50 border-red-200 text-red-600" : ""
-              }
-            >
-              {isRepeating ? (
-                <RotateCcw className="w-4 h-4" />
-              ) : (
-                <Repeat className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs text-gray-600">Playback Mode</label>
-            <Select
-              value={playbackMode}
-              onValueChange={(value: "normal" | "repeat" | "slow") =>
-                setPlaybackMode(value)
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="normal">Normal Speed</SelectItem>
-                <SelectItem value="slow">Slow Speed</SelectItem>
-                <SelectItem value="repeat">Auto Repeat</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {playbackMode === "repeat" && (
-            <div className="space-y-2">
-              <label className="text-xs text-gray-600">Repeat Count</label>
-              <Select
-                value={repeatCount.toString()}
-                onValueChange={(value) => setRepeatCount(parseInt(value))}
+            {/* <div className="flex space-x-2">
+              <Button
+                onClick={handlePlaySegment}
+                variant="outline"
+                className="flex-1 h-10 border-gray-200 hover:border-blue-300 hover:bg-blue-50 rounded-lg transition-all duration-200"
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Repeat
+              </Button>
+              <Button
+                onClick={stopRepeatPlayback}
+                variant="outline"
+                className="flex-1 h-10 border-gray-200 hover:border-red-300 hover:bg-red-50 rounded-lg transition-all duration-200"
+              >
+                <Square className="w-4 h-4 mr-2" />
+                Stop
+              </Button>
+            </div> */}
+
+            {/* Playback Mode */}
+            {/* <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Playback Mode
+              </label>
+              <Select
+                value={playbackMode}
+                onValueChange={(value: "normal" | "slow" | "repeat") =>
+                  setPlaybackMode(value)
+                }
+              >
+                <SelectTrigger className="education-input h-10 bg-white border-gray-200">
+                  <SelectValue placeholder="Select playback mode" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 time</SelectItem>
-                  <SelectItem value="3">3 times</SelectItem>
-                  <SelectItem value="5">5 times</SelectItem>
-                  <SelectItem value="10">10 times</SelectItem>
+                <SelectContent className="z-50 bg-white border border-gray-200 shadow-lg rounded-lg">
+                  <SelectItem value="normal">Normal Speed</SelectItem>
+                  <SelectItem value="slow">Slow Speed</SelectItem>
+                  <SelectItem value="repeat">Repeat Mode</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-          )}
+            </div> */}
+          </div>
         </div>
-      </div>
 
-      {/* Word Learning */}
-      {selectedWord && (
-        <div className="p-4 border-b">
-          <h4 className="text-sm font-medium text-gray-700 mb-3">
-            Word Learning
-          </h4>
-
-          <div className="space-y-3">
-            <div className="p-3 bg-blue-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <span className="font-medium text-blue-900">
-                    {selectedWord}
-                  </span>
-                  {wordData?.phonetic && (
-                    <span className="text-sm text-gray-600 font-mono">
-                      /{wordData.phonetic}/
+        {/* Word Learning */}
+        {selectedWord && (
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+            {/* <h4 className="text-lg font-semibold text-gray-800 flex items-center mb-3">
+              <span className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center mr-2">
+                <span className="text-purple-600 text-xs">📚</span>
+              </span>
+              Word Learning
+            </h4> */}
+            <div className="space-y-3">
+              <div className="bg-white p-4 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-purple-900 text-lg">
+                      {selectedWord}
                     </span>
-                  )}
+                    {wordData?.phonetic && (
+                      <span className="text-sm text-gray-600 font-mono">
+                        /{wordData.phonetic}/
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (selectedWord) {
+                        DictionaryAPI.speakWord(selectedWord);
+                      }
+                    }}
+                    className="hover:bg-purple-100"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (selectedWord) {
-                      DictionaryAPI.speakWord(selectedWord);
-                    }
-                  }}
-                >
-                  <Volume2 className="w-4 h-4" />
-                </Button>
-              </div>
 
-              <div className="text-sm text-blue-800">
-                {isLoadingWord ? (
-                  <>
-                    <p className="mb-1">
-                      <span className="font-medium">Definition:</span>
-                      <span className="ml-1 text-gray-600">Loading...</span>
-                    </p>
-                    <p>
-                      <span className="font-medium">Part of Speech:</span>
-                      <span className="ml-1 text-gray-600">Loading...</span>
-                    </p>
-                  </>
-                ) : wordData ? (
-                  <>
-                    <p className="mb-1">
-                      <span className="font-medium">Definition:</span>
-                      <span className="ml-1 text-gray-600">
-                        {wordData.definition}
-                      </span>
-                    </p>
-                    <p className="mb-1">
-                      <span className="font-medium">Part of Speech:</span>
-                      <span className="ml-1 text-gray-600">
-                        {wordData.partOfSpeech}
-                      </span>
-                    </p>
-                    {wordData.example && (
+                <div className="text-sm text-purple-800 space-y-2">
+                  {isLoadingWord ? (
+                    <>
                       <p>
-                        <span className="font-medium">Example:</span>
-                        <span className="ml-1 text-gray-600 italic">
-                          "{wordData.example}"
+                        <span className="font-medium">Definition:</span>{" "}
+                        <span className="text-gray-600">Loading...</span>
+                      </p>
+                      <p>
+                        <span className="font-medium">Part of Speech:</span>{" "}
+                        <span className="text-gray-600">Loading...</span>
+                      </p>
+                    </>
+                  ) : wordData ? (
+                    <>
+                      <p>
+                        <span className="font-medium">Definition:</span>{" "}
+                        <span className="text-gray-600">
+                          {wordData.definition}
                         </span>
                       </p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p className="mb-1">
-                      <span className="font-medium">Definition:</span>
-                      <span className="ml-1 text-gray-600">
-                        Click a word to see definition
-                      </span>
-                    </p>
-                    <p>
-                      <span className="font-medium">Part of Speech:</span>
-                      <span className="ml-1 text-gray-600">-</span>
-                    </p>
-                  </>
-                )}
+                      <p>
+                        <span className="font-medium">Part of Speech:</span>{" "}
+                        <span className="text-gray-600">
+                          {wordData.partOfSpeech}
+                        </span>
+                      </p>
+                      {wordData.example && (
+                        <p>
+                          <span className="font-medium">Example:</span>{" "}
+                          <span className="text-gray-600 italic">
+                            "{wordData.example}"
+                          </span>
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        <span className="font-medium">Definition:</span>{" "}
+                        <span className="text-gray-600">
+                          Click a word to see definition
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-medium">Part of Speech:</span>{" "}
+                        <span className="text-gray-600">-</span>
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={handleAddToVocabulary}
+                className="w-full h-10 bg-white border-purple-200 hover:border-purple-300 hover:bg-purple-50 text-purple-700 font-medium rounded-lg transition-all duration-200"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add to Vocabulary
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Learning Progress */}
+        {/* <div className="space-y-4">
+          <h4 className="text-lg font-semibold text-gray-800 flex items-center">
+            <span className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center mr-2">
+              <span className="text-orange-600 text-xs">📊</span>
+            </span>
+            Learning Progress
+          </h4>
+          <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl p-4 border border-orange-100">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-medium">
+                  Vocabulary Items:
+                </span>
+                <span className="text-orange-600 font-bold">
+                  {vocabularyCount}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-medium">
+                  Current Video:
+                </span>
+                <span className="text-blue-600 font-bold">
+                  {currentVideoStatus}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-medium">
+                  Playback Speed:
+                </span>
+                <span className="text-green-600 font-bold">
+                  {playbackSpeed}
+                </span>
               </div>
             </div>
+          </div>
+        </div> */}
 
+        {/* Quick Actions */}
+        {/* <div className="space-y-4">
+          <h4 className="text-lg font-semibold text-gray-800 flex items-center">
+            <span className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center mr-2">
+              <span className="text-indigo-600 text-xs">⚡</span>
+            </span>
+            Quick Actions
+          </h4>
+          <div className="space-y-3">
             <Button
+              onClick={handleExportVocabulary}
               variant="outline"
-              size="sm"
-              onClick={handleAddToVocabulary}
-              className="w-full"
+              className="w-full h-11 bg-white border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50 text-indigo-700 font-medium rounded-lg transition-all duration-200"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add to Vocabulary
+              <BookOpen className="w-4 h-4 mr-2" />
+              Export Vocabulary
+            </Button>
+            <Button
+              onClick={handleResetProgress}
+              variant="outline"
+              className="w-full h-11 bg-white border-gray-200 hover:border-red-300 hover:bg-red-50 text-gray-700 hover:text-red-700 font-medium rounded-lg transition-all duration-200"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset Progress
             </Button>
           </div>
-        </div>
-      )}
-
-      {/* Statistics */}
-      <div className="p-4 border-b">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">
-          Learning Progress
-        </h4>
-
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Vocabulary Items:</span>
-            <span className="font-medium">{vocabulary.length}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Current Video:</span>
-            <span className="font-medium">
-              {playerState.currentTime > 0
-                ? formatTime(playerState.currentTime)
-                : "Not started"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Playback Speed:</span>
-            <span className="font-medium">{playerState.playbackRate}x</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="p-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">
-          Quick Actions
-        </h4>
-
-        <div className="space-y-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              // TODO: Implement export functionality
-            }}
-            className="w-full justify-start"
-          >
-            <BookOpen className="w-4 h-4 mr-2" />
-            Export Vocabulary
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              // TODO: Implement reset functionality
-            }}
-            className="w-full justify-start"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Reset Progress
-          </Button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -83,137 +83,139 @@ export function SubtitleList({
   return (
     <div className="h-full flex flex-col">
       {/* Header with Search and Export */}
-      <div className="p-4 border-b space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Subtitles</h3>
-          <div className="flex items-center space-x-2">
-            {currentVideo && subtitles.length > 0 && (
-              <SubtitleSaveButton
-                video={currentVideo}
-                subtitles={subtitles}
-                source="assemblyai"
-                onSaved={() => {
-                  // 可以在这里添加保存后的回调逻辑
-                }}
-              />
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowExportDialog(!showExportDialog)}
-            >
-              <Download className="w-4 h-4 mr-1" />
-              Export
-            </Button>
-          </div>
+      <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-gray-900 flex items-center">
+            <span className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mr-3 shadow-sm">
+              <span className="text-white text-sm font-bold">📝</span>
+            </span>
+            Subtitles
+          </h3>
+          {currentVideo && subtitles.length > 0 && (
+            <SubtitleSaveButton
+              video={currentVideo}
+              subtitles={subtitles}
+              source="assemblyai"
+              onSaved={() => {
+                // 可以在这里添加保存后的回调逻辑
+              }}
+            />
+          )}
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
             placeholder="Search subtitles..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="education-input w-full pl-12 pr-4 py-3"
           />
         </div>
-
-        {/* Export Dialog */}
-        {showExportDialog && (
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="text-sm font-medium mb-2">Export Format:</div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExportSubtitles("srt")}
-              >
-                SRT
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExportSubtitles("vtt")}
-              >
-                VTT
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExportSubtitles("txt")}
-              >
-                TXT
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExportSubtitles("json")}
-              >
-                JSON
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Subtitle Count */}
+      {subtitles.length > 0 && (
+        <div className="px-6 py-3 bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-100">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-700 font-medium">
+              {filteredSubtitles.length} of {subtitles.length} subtitles
+            </span>
+            {searchTerm && (
+              <span className="text-green-600 font-medium">
+                Filtered by "{searchTerm}"
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Subtitle List */}
       <div className="flex-1 overflow-y-auto">
-        {filteredSubtitles.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            {searchTerm
-              ? "No subtitles found matching your search."
-              : "No subtitles available."}
+        {subtitles.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <span className="text-gray-400 text-2xl">📝</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No Subtitles Yet
+            </h3>
+            <p className="text-gray-600 max-w-sm">
+              Upload a video and generate subtitles to start learning. The
+              subtitles will appear here for easy navigation.
+            </p>
+          </div>
+        ) : filteredSubtitles.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Search className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No Matching Subtitles
+            </h3>
+            <p className="text-gray-600 max-w-sm">
+              Try adjusting your search terms to find the subtitles you're
+              looking for.
+            </p>
           </div>
         ) : (
-          <div className="space-y-2 p-4">
+          <div className="p-4 space-y-3">
             {filteredSubtitles.map((subtitle) => {
-              const isCurrent = isCurrentSubtitle(subtitle);
-              const isPlaying = isPlayingInRange(subtitle);
+              const isCurrent = currentSubtitle?.id === subtitle.id;
+              const isPlaying =
+                playerState.isPlaying &&
+                playerState.currentTime >= subtitle.start &&
+                playerState.currentTime <= subtitle.end;
 
               return (
                 <div
                   key={subtitle.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-all hover:bg-gray-50 ${
+                  className={`p-4 rounded-xl border cursor-pointer transition-all duration-200 hover:shadow-md ${
                     isCurrent
-                      ? "bg-blue-50 border-blue-200"
+                      ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm"
                       : isPlaying
-                      ? "bg-green-50 border-green-200"
-                      : "border-gray-200"
+                      ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 shadow-sm"
+                      : "border-gray-200 hover:bg-gray-50"
                   }`}
                   onClick={() => handleSubtitleClick(subtitle)}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-xs text-gray-500 font-mono">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
                           {formatTime(subtitle.start)} -{" "}
                           {formatTime(subtitle.end)}
                         </span>
                         {subtitle.confidence && (
                           <span
-                            className={`text-xs px-2 py-1 rounded ${
+                            className={`text-xs px-2 py-1 rounded-full font-medium ${
                               subtitle.confidence > 0.8
-                                ? "bg-green-100 text-green-800"
+                                ? "bg-green-100 text-green-700"
                                 : subtitle.confidence > 0.6
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
                             }`}
                           >
                             {Math.round(subtitle.confidence * 100)}%
                           </span>
                         )}
+                        {isCurrent && (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                            Current
+                          </span>
+                        )}
+                        {isPlaying && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium animate-pulse">
+                            Playing
+                          </span>
+                        )}
                       </div>
-                      <p
-                        className={`text-sm leading-relaxed ${
-                          isCurrent ? "font-medium" : ""
-                        }`}
-                      >
+                      <p className="text-sm leading-relaxed text-gray-800 line-clamp-2">
                         {subtitle.text}
                       </p>
                     </div>
-
-                    <div className="flex items-center space-x-1 ml-2">
+                    <div className="ml-3 flex flex-col space-y-1">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -221,7 +223,7 @@ export function SubtitleList({
                           e.stopPropagation();
                           onPlaySegment?.(subtitle.start, subtitle.end);
                         }}
-                        className="text-gray-500 hover:text-blue-600"
+                        className="h-8 w-8 p-0 hover:bg-blue-100 text-blue-600"
                       >
                         <Play className="w-3 h-3" />
                       </Button>
@@ -233,21 +235,9 @@ export function SubtitleList({
                           e.stopPropagation();
                           handleEditSubtitle(subtitle);
                         }}
-                        className="text-gray-500 hover:text-orange-600"
+                        className="h-8 w-8 p-0 hover:bg-orange-100 text-orange-600"
                       >
                         <Edit className="w-3 h-3" />
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // TODO: Implement text-to-speech for this subtitle
-                        }}
-                        className="text-gray-500 hover:text-green-600"
-                      >
-                        <Volume2 className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>
@@ -258,11 +248,48 @@ export function SubtitleList({
         )}
       </div>
 
-      {/* Status Bar */}
-      <div className="p-3 border-t bg-gray-50 text-xs text-gray-600">
-        {filteredSubtitles.length} of {subtitles.length} subtitles
-        {searchTerm && ` matching "${searchTerm}"`}
-      </div>
+      {/* Export Dialog */}
+      {showExportDialog && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-lg font-semibold mb-4">Export Subtitles</h3>
+            <div className="space-y-3">
+              <Button
+                onClick={() => handleExportSubtitles("srt")}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export as SRT
+              </Button>
+              <Button
+                onClick={() => handleExportSubtitles("vtt")}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export as VTT
+              </Button>
+              <Button
+                onClick={() => handleExportSubtitles("txt")}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export as TXT
+              </Button>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowExportDialog(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Subtitle Editor Modal */}
       {editingSubtitle && (

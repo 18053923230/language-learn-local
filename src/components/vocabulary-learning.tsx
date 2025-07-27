@@ -99,25 +99,32 @@ export function VocabularyLearning() {
   };
 
   return (
-    <div className="h-full flex flex-col space-y-4">
+    <div className="h-full flex flex-col space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Vocabulary Learning</h2>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+            <BookOpen className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">My Vocabulary</h2>
+        </div>
+        <div className="flex items-center space-x-3">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowStats(!showStats)}
+            className="education-button-secondary"
           >
-            <TrendingUp className="w-4 h-4 mr-1" />
+            <TrendingUp className="w-4 h-4 mr-2" />
             Stats
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => handleExport("json")}
+            className="education-button-secondary"
           >
-            <Download className="w-4 h-4 mr-1" />
+            <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
         </div>
@@ -125,35 +132,42 @@ export function VocabularyLearning() {
 
       {/* Statistics */}
       {showStats && (
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h3 className="font-semibold mb-2">Learning Statistics</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
+        <div className="education-card p-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-100">
+          <h3 className="font-bold text-gray-900 mb-4 flex items-center">
+            <span className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center mr-2">
+              <span className="text-purple-600 text-xs">📊</span>
+            </span>
+            Learning Statistics
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-600 mb-1">
                 {stats.total}
               </div>
-              <div className="text-gray-600">Total Words</div>
+              <div className="text-sm text-gray-600 font-medium">
+                Total Words
+              </div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600 mb-1">
                 {stats.easy}
               </div>
-              <div className="text-gray-600">Easy</div>
+              <div className="text-sm text-gray-600 font-medium">Easy</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-yellow-600">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-yellow-600 mb-1">
                 {stats.medium}
               </div>
-              <div className="text-gray-600">Medium</div>
+              <div className="text-sm text-gray-600 font-medium">Medium</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-red-600 mb-1">
                 {stats.hard}
               </div>
-              <div className="text-gray-600">Hard</div>
+              <div className="text-sm text-gray-600 font-medium">Hard</div>
             </div>
           </div>
-          <div className="mt-2 text-sm text-gray-600">
+          <div className="mt-4 text-sm text-gray-600 text-center">
             Reviewed today: {stats.reviewedToday} | Avg reviews:{" "}
             {stats.averageReviewCount}
           </div>
@@ -162,136 +176,189 @@ export function VocabularyLearning() {
 
       {/* Search Section */}
       <div className="space-y-4">
-        <div className="flex space-x-2">
-          <Input
-            placeholder="Search for a word..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-          />
-          <Button onClick={handleSearch} disabled={loading}>
-            <Search className="w-4 h-4 mr-1" />
+        <div className="flex space-x-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              placeholder="Search for a word..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              className="education-input pl-12 pr-4 py-3 text-lg"
+            />
+          </div>
+          <Button
+            onClick={handleSearch}
+            disabled={loading}
+            className="education-button px-6"
+          >
+            <Search className="w-4 h-4 mr-2" />
             Search
           </Button>
         </div>
 
         {/* Search Results */}
         {searchResults.length > 0 && (
-          <div className="bg-white border rounded-lg p-4">
-            <h3 className="font-semibold mb-2">Search Results</h3>
-            {searchResults.map((entry, index) => (
-              <div key={index} className="border-b last:border-b-0 py-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-lg font-medium">{entry.word}</h4>
-                    {entry.phonetic && (
-                      <span className="text-gray-500">[{entry.phonetic}]</span>
-                    )}
+          <div className="education-card p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+            <h3 className="font-bold text-gray-900 mb-4 flex items-center">
+              <span className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                <span className="text-blue-600 text-xs">🔍</span>
+              </span>
+              Search Results
+            </h3>
+            <div className="space-y-4">
+              {searchResults.map((entry, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-xl p-4 border border-blue-200 shadow-sm"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <h4 className="text-lg font-bold text-gray-900">
+                        {entry.word}
+                      </h4>
+                      {entry.phonetic && (
+                        <span className="text-sm text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">
+                          [{entry.phonetic}]
+                        </span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSpeak(entry.word)}
+                        className="hover:bg-blue-100 text-blue-600"
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <Button
-                      variant="ghost"
                       size="sm"
-                      onClick={() => handleSpeak(entry.word)}
+                      onClick={() => handleAddWord(entry.word)}
+                      disabled={vocabulary.some((v) => v.word === entry.word)}
+                      className="education-button"
                     >
-                      <Volume2 className="w-4 h-4" />
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add
                     </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleAddWord(entry.word)}
-                    disabled={vocabulary.some((v) => v.word === entry.word)}
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add
-                  </Button>
-                </div>
-                {entry.meanings.map((meaning, mIndex) => (
-                  <div key={mIndex} className="ml-4 mb-2">
-                    <div className="text-sm text-gray-600 italic">
-                      {meaning.partOfSpeech}
-                    </div>
-                    <div className="text-sm">
-                      {meaning.definitions[0]?.definition}
-                    </div>
-                    {meaning.definitions[0]?.example && (
-                      <div className="text-sm text-gray-500 mt-1">
-                        Example: "{meaning.definitions[0].example}"
+                  {entry.meanings.map((meaning, mIndex) => (
+                    <div key={mIndex} className="ml-2 mb-3 last:mb-0">
+                      <div className="text-sm text-blue-600 font-medium mb-1">
+                        {meaning.partOfSpeech}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ))}
+                      <div className="text-gray-700 mb-2">
+                        {meaning.definitions[0]?.definition}
+                      </div>
+                      {meaning.definitions[0]?.example && (
+                        <div className="text-sm text-gray-600 italic bg-gray-50 p-2 rounded-lg">
+                          "{meaning.definitions[0].example}"
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700">
-            {error}
+          <div className="education-card p-4 bg-red-50 border-red-200">
+            <div className="flex items-center space-x-2 text-red-700">
+              <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-red-600 text-xs">⚠️</span>
+              </span>
+              <span className="font-medium">{error}</span>
+            </div>
           </div>
         )}
       </div>
 
       {/* Vocabulary List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold">My Vocabulary ({vocabulary.length})</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-gray-900 flex items-center">
+            <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center mr-2">
+              <span className="text-purple-600 text-xs">📚</span>
+            </span>
+            My Vocabulary ({vocabulary.length})
+          </h3>
           {wordsForReview.length > 0 && (
-            <span className="text-sm text-blue-600">
+            <span className="text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-full">
               {wordsForReview.length} words need review
             </span>
           )}
         </div>
 
         {vocabulary.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
-            <BookOpen className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-            <p>No words added yet. Search for a word to get started!</p>
+          <div className="text-center py-12">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No words added yet
+            </h3>
+            <p className="text-gray-600 max-w-sm mx-auto">
+              Search for a word above to start building your vocabulary!
+            </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-4">
             {vocabulary.map((item) => (
               <div
                 key={item.id}
-                className={`bg-white border rounded-lg p-3 ${
+                className={`education-card p-6 transition-all duration-200 hover:shadow-lg ${
                   wordsForReview.some((w) => w.id === item.id)
-                    ? "border-yellow-300 bg-yellow-50"
-                    : ""
+                    ? "bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200"
+                    : "bg-white"
                 }`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h4 className="font-medium">{item.word}</h4>
-                      <span className="text-xs text-gray-500 italic">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <h4 className="text-xl font-bold text-gray-900">
+                        {item.word}
+                      </h4>
+                      <span className="text-sm text-gray-500 italic bg-gray-100 px-2 py-1 rounded">
                         {item.partOfSpeech}
                       </span>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleSpeak(item.word)}
+                        className="hover:bg-purple-100 text-purple-600"
                       >
-                        <Volume2 className="w-3 h-3" />
+                        <Volume2 className="w-4 h-4" />
                       </Button>
                     </div>
-                    <p className="text-sm text-gray-700 mb-1">
+                    <p className="text-gray-700 mb-2 leading-relaxed">
                       {item.definition}
                     </p>
                     {item.example && (
-                      <p className="text-sm text-gray-500 italic">
+                      <p className="text-gray-600 italic bg-gray-50 p-3 rounded-lg mb-3">
                         "{item.example}"
                       </p>
                     )}
-                    <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
-                      <span>Reviews: {item.reviewCount}</span>
-                      <span>Added: {formatDate(item.addedAt)}</span>
+                    <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
+                      <span className="flex items-center space-x-1">
+                        <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                        <span>Reviews: {item.reviewCount}</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                        <span>Added: {formatDate(item.addedAt)}</span>
+                      </span>
                       {item.lastReviewed && (
-                        <span>Last: {formatDate(item.lastReviewed)}</span>
+                        <span className="flex items-center space-x-1">
+                          <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                          <span>Last: {formatDate(item.lastReviewed)}</span>
+                        </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-1 ml-2">
+                  <div className="flex flex-col items-end space-y-3 ml-4">
                     {/* Difficulty Buttons */}
                     <div className="flex space-x-1">
                       <Button
@@ -300,7 +367,11 @@ export function VocabularyLearning() {
                         }
                         size="sm"
                         onClick={() => handleDifficultyChange(item.id, "easy")}
-                        className="text-xs px-2"
+                        className={`text-xs px-3 py-1 h-8 ${
+                          item.difficulty === "easy"
+                            ? "bg-green-500 hover:bg-green-600 text-white"
+                            : "border-green-200 text-green-600 hover:bg-green-50"
+                        }`}
                       >
                         Easy
                       </Button>
@@ -312,7 +383,11 @@ export function VocabularyLearning() {
                         onClick={() =>
                           handleDifficultyChange(item.id, "medium")
                         }
-                        className="text-xs px-2"
+                        className={`text-xs px-3 py-1 h-8 ${
+                          item.difficulty === "medium"
+                            ? "bg-yellow-500 hover:bg-yellow-600 text-white"
+                            : "border-yellow-200 text-yellow-600 hover:bg-yellow-50"
+                        }`}
                       >
                         Med
                       </Button>
@@ -322,48 +397,53 @@ export function VocabularyLearning() {
                         }
                         size="sm"
                         onClick={() => handleDifficultyChange(item.id, "hard")}
-                        className="text-xs px-2"
+                        className={`text-xs px-3 py-1 h-8 ${
+                          item.difficulty === "hard"
+                            ? "bg-red-500 hover:bg-red-600 text-white"
+                            : "border-red-200 text-red-600 hover:bg-red-50"
+                        }`}
                       >
                         Hard
                       </Button>
                     </div>
 
-                    {/* Review Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleReview(item.id)}
-                      className="text-blue-600"
-                    >
-                      <Clock className="w-3 h-3" />
-                    </Button>
-
-                    {/* Remove Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeWord(item.id)}
-                      className="text-red-600"
-                    >
-                      ×
-                    </Button>
+                    {/* Action Buttons */}
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReview(item.id)}
+                        className="h-8 w-8 p-0 border-blue-200 text-blue-600 hover:bg-blue-50"
+                      >
+                        <Clock className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeWord(item.id)}
+                        className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
+                      >
+                        ×
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Notes Section */}
                 {selectedWord === item.id && (
-                  <div className="mt-3 pt-3 border-t">
+                  <div className="mt-4 pt-4 border-t border-gray-200">
                     <Textarea
-                      placeholder="Add notes..."
+                      placeholder="Add your personal notes about this word..."
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      rows={2}
-                      className="mb-2"
+                      rows={3}
+                      className="education-input mb-3"
                     />
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-3">
                       <Button
                         size="sm"
                         onClick={() => handleSaveNotes(item.id)}
+                        className="education-button"
                       >
                         Save Notes
                       </Button>
@@ -371,6 +451,7 @@ export function VocabularyLearning() {
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedWord(null)}
+                        className="education-button-secondary"
                       >
                         Cancel
                       </Button>
@@ -384,7 +465,7 @@ export function VocabularyLearning() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setSelectedWord(item.id)}
-                    className="mt-2"
+                    className="mt-3 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                   >
                     {item.notes ? "Edit Notes" : "Add Notes"}
                   </Button>

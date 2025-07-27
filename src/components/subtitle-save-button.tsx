@@ -129,7 +129,9 @@ export function SubtitleSaveButton({
       disabled={isSaving || subtitles.length === 0}
       variant={getButtonVariant()}
       size="sm"
-      className="flex items-center space-x-2"
+      className={`flex items-center space-x-2 ${
+        hasExistingRecord ? "education-button-secondary" : "education-button"
+      }`}
     >
       {getButtonIcon()}
       <span>{getButtonText()}</span>

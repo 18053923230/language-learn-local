@@ -2,10 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, Download, Eye, Search } from "lucide-react";
+import {
+  Trash2,
+  Download,
+  Eye,
+  Search,
+  ArrowLeft,
+  FileText,
+} from "lucide-react";
 import { subtitleStorage, SubtitleRecord } from "@/lib/subtitle-storage";
 import { SubtitleExporter } from "@/lib/subtitle-export";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function SubtitlesPage() {
   const [records, setRecords] = useState<SubtitleRecord[]>([]);
@@ -108,200 +116,235 @@ export default function SubtitlesPage() {
   };
 
   const getSourceLabel = (source: string) => {
-    const labels = {
+    const labels: { [key: string]: string } = {
       assemblyai: "AssemblyAI",
       upload: "Upload",
       manual: "Manual",
     };
-    return labels[source as keyof typeof labels] || source;
+    return labels[source] || source;
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Subtitle Management
-          </h1>
-          <p className="text-gray-600">Manage saved subtitle records</p>
-        </div>
-
-        {/* Stats */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-blue-600">
-                {stats.totalRecords}
+    <div className="min-h-screen">
+      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <Link href="/">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Video
+                </Button>
+              </Link>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  Subtitle Management
+                </h1>
               </div>
-              <div className="text-sm text-gray-600">Total Records</div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-green-600">
-                {formatFileSize(stats.totalSize)}
-              </div>
-              <div className="text-sm text-gray-600">Total Size</div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-purple-600">
-                {stats.languages.length}
-              </div>
-              <div className="text-sm text-gray-600">Languages</div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="text-2xl font-bold text-orange-600">
-                {Object.values(stats.sources).reduce(
-                  (sum, count) => sum + count,
-                  0
-                )}
-              </div>
-              <div className="text-sm text-gray-600">Source Types</div>
             </div>
           </div>
-        )}
-
-        {/* Search */}
-        <div className="bg-white p-4 rounded-lg shadow mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search video name or language..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
         </div>
+      </header>
 
-        {/* Records List */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          {filteredRecords.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="text-gray-500 mb-4">No subtitle records</div>
-              <p className="text-sm text-gray-400">
-                {searchTerm
-                  ? "No matching records found"
-                  : "Upload videos and generate subtitles to view and manage them here"}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Video Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Language
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Duration
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Subtitles
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Confidence
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Source
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredRecords.map((record) => (
-                    <tr key={record.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
-                          {record.videoName}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {record.language}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDuration(record.duration)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {record.subtitles.length}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            record.confidence > 0.8
-                              ? "bg-green-100 text-green-800"
-                              : record.confidence > 0.6
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {Math.round(record.confidence * 100)}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {getSourceLabel(record.source)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(record.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleExportRecord(record, "srt")}
-                          >
-                            <Download className="w-3 h-3 mr-1" />
-                            SRT
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleExportRecord(record, "vtt")}
-                          >
-                            <Download className="w-3 h-3 mr-1" />
-                            VTT
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteRecord(record.id)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Page Header */}
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Manage Your Subtitle Library
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              View, search, export, and manage all your saved subtitle records.
+              Your learning progress is automatically saved and organized.
+            </p>
+          </div>
+
+          {/* Statistics Cards */}
+          {stats && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="education-card p-6 text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-2">
+                  {stats.totalRecords}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Total Records
+                </div>
+              </div>
+              <div className="education-card p-6 text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {formatFileSize(stats.totalSize)}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Total Size
+                </div>
+              </div>
+              <div className="education-card p-6 text-center">
+                <div className="text-3xl font-bold text-purple-600 mb-2">
+                  {stats.languages.length}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Languages
+                </div>
+              </div>
+              <div className="education-card p-6 text-center">
+                <div className="text-3xl font-bold text-orange-600 mb-2">
+                  {Object.values(stats.sources).reduce(
+                    (sum, count) => sum + count,
+                    0
+                  )}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Source Types
+                </div>
+              </div>
             </div>
           )}
+
+          {/* Search Bar */}
+          <div className="education-card p-6">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search video name or language..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="education-input w-full pl-12 pr-4 py-4 text-lg"
+              />
+            </div>
+          </div>
+
+          {/* Records Table */}
+          <div className="education-card overflow-hidden">
+            {loading ? (
+              <div className="p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading subtitle records...</p>
+              </div>
+            ) : filteredRecords.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No Subtitle Records
+                </h3>
+                <p className="text-gray-600 max-w-sm mx-auto">
+                  {searchTerm
+                    ? "No matching records found"
+                    : "Upload videos and generate subtitles to view and manage them here"}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Video Name
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Language
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Duration
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Subtitles
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Confidence
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Source
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Created
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredRecords.map((record) => (
+                      <tr
+                        key={record.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                            {record.videoName}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="education-badge education-badge-info">
+                            {record.language}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {formatDuration(record.duration)}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {record.subtitles.length} segments
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`education-badge ${
+                              record.confidence > 0.8
+                                ? "education-badge-success"
+                                : record.confidence > 0.6
+                                ? "education-badge-warning"
+                                : "education-badge-error"
+                            }`}
+                          >
+                            {Math.round(record.confidence * 100)}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="education-badge education-badge-info">
+                            {getSourceLabel(record.source)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {formatDate(record.createdAt)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleExportRecord(record, "srt")}
+                              className="h-8 w-8 p-0 hover:bg-green-100 text-green-600"
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteRecord(record.id)}
+                              className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

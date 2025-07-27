@@ -258,30 +258,41 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
+    <div className="min-h-screen">
+      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">L</span>
+              </div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
                 Language Learning Platform
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <Link href="/vocabulary">
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
                   <BookOpen className="w-4 h-4 mr-2" />
                   Vocabulary
                 </Button>
               </Link>
               <Link href="/subtitles">
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Subtitles
                 </Button>
               </Link>
               <Link href="/settings">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="hover:bg-blue-50">
                   <Settings className="w-4 h-4" />
                 </Button>
               </Link>
@@ -290,35 +301,37 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!currentVideo ? (
           // Upload Screen
           <div className="flex flex-col items-center justify-center min-h-[600px]">
-            {/* 
-              FIX: Added `relative` and `z-10` here.
-              This creates a new stacking context and lifts this entire section (and its children, like dropdowns)
-              above other elements on the page, fixing the "hollow" or "see-through" issue with the dropdown menu.
-            */}
-            <div className="text-center space-y-6 relative z-10">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <div className="text-center space-y-8 relative z-10">
+              <div className="space-y-4">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <span className="text-white text-2xl font-bold">🎬</span>
+                </div>
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
                   Start Learning with Video
                 </h2>
-                <p className="text-lg text-gray-600 max-w-2xl">
+                <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
                   Upload a video file and we'll automatically generate subtitles
                   to help you learn the language. Support for multiple languages
                   and formats.
                 </p>
               </div>
 
-              <FileUpload onFileSelect={handleFileSelect} />
+              <div className="education-card p-10 max-w-lg mx-auto">
+                <FileUpload onFileSelect={handleFileSelect} />
+              </div>
 
               {/* Fallback processing indicator */}
               {isProcessing && !isTranscribing && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span className="text-blue-800">Processing video...</span>
+                <div className="education-card p-6 max-w-md mx-auto">
+                  <div className="flex items-center space-x-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-blue-800 font-medium">
+                      Processing video...
+                    </span>
                   </div>
                 </div>
               )}
@@ -326,12 +339,12 @@ export default function HomePage() {
           </div>
         ) : (
           // Main Learning Interface
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Video Section */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
               {/* Video Player */}
               <div className="col-span-1 md:col-span-8">
-                <div className="bg-black rounded-lg overflow-hidden w-full aspect-video">
+                <div className="education-card overflow-hidden w-full aspect-video">
                   <VideoPlayer
                     url={currentVideo.url}
                     onProgress={handleVideoProgress}
@@ -341,25 +354,32 @@ export default function HomePage() {
                 </div>
 
                 {/* Video Info */}
-                <div className="mt-4 p-4 bg-white rounded-lg shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
+                <div className="mt-6 education-card p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 truncate">
                     {currentVideo.name}
                   </h3>
-                  <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
-                    <span>Language: {currentVideo.language}</span>
-                    <span>
+                  <div className="flex items-center flex-wrap gap-4 text-sm">
+                    <span className="education-badge education-badge-info">
+                      Language: {currentVideo.language}
+                    </span>
+                    <span className="education-badge education-badge-info">
                       Duration: {Math.floor(currentVideo.duration / 60)}m{" "}
                       {Math.round(currentVideo.duration % 60)}s
                     </span>
-                    <span>
+                    <span className="education-badge education-badge-info">
                       Size: {(currentVideo.size / 1024 / 1024).toFixed(1)} MB
                     </span>
                   </div>
 
                   {/* Subtitle Processing Section */}
                   {!currentVideo.processed && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <h4 className="text-sm font-medium text-gray-900 mb-3">
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-blue-600 text-xs font-bold">
+                            S
+                          </span>
+                        </span>
                         Subtitle Processing
                       </h4>
                       <SubtitleProcessor
@@ -374,10 +394,10 @@ export default function HomePage() {
 
                   {/* Transcription Progress */}
                   {(isTranscribing || transcriptionProgress) && (
-                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <div className="mt-6 education-card p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                           <span className="text-blue-800 font-medium">
                             {transcriptionProgress?.message ||
                               "Transcribing..."}
@@ -388,15 +408,15 @@ export default function HomePage() {
                             setIsTranscribing(false);
                             setTranscriptionProgress(null);
                           }}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
                         >
                           Cancel
                         </button>
                       </div>
                       {transcriptionProgress && (
-                        <div className="w-full bg-blue-200 rounded-full h-2">
+                        <div className="education-progress h-3">
                           <div
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            className="education-progress-bar"
                             style={{
                               width: `${transcriptionProgress.progress}%`,
                             }}
@@ -407,7 +427,7 @@ export default function HomePage() {
                   )}
                 </div>
                 {/* Learning Panel - Below Video */}
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div className="education-card overflow-hidden">
                   <LearningPanel
                     onPlaySegment={handlePlaySegment}
                     onAddToVocabulary={handleAddToVocabulary}
@@ -418,7 +438,7 @@ export default function HomePage() {
               {/* Subtitles Panel */}
               <div className="col-span-1 md:col-span-4">
                 <div
-                  className="bg-white rounded-lg shadow-sm overflow-hidden"
+                  className="education-card overflow-hidden"
                   style={{ height: "1200px" }}
                 >
                   <SubtitleList

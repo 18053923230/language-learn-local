@@ -6,48 +6,57 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* 现代教育风格 - 蓝色系配色 */
+    --background: 210 40% 98%; /* 浅蓝背景 */
+    --foreground: 222 84% 5%; /* 深色文字 */
+    --card: 0 0% 100%; /* 纯白卡片 */
+    --card-foreground: 222 84% 5%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 222 84% 5%;
+    --primary: 217 91% 60%; /* 主蓝色 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%; /* 浅灰蓝 */
+    --secondary-foreground: 222 84% 5%;
     --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --muted-foreground: 215 16% 47%;
+    --accent: 217 91% 60%; /* 蓝色强调 */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%; /* 红色错误 */
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 76% 36%; /* 绿色成功 */
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%; /* 橙色警告 */
+    --warning-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
+    --radius: 0.75rem; /* 增加圆角 */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 84% 5%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 222 84% 5%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 222 84% 5%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 18%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --muted: 217 33% 18%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --border: 217 33% 18%;
+    --input: 217 33% 18%;
+    --ring: 217 91% 60%;
   }
 }
 
@@ -57,6 +66,89 @@
   }
   body {
     @apply bg-background text-foreground;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+    min-height: 100vh;
+  }
+}
+
+/* 现代教育风格组件样式 */
+@layer components {
+  .education-card {
+    @apply bg-white rounded-xl shadow-lg border border-gray-100;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+
+  .education-card:hover {
+    @apply shadow-xl;
+    transform: translateY(-2px);
+  }
+
+  .education-gradient {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  }
+
+  .education-gradient-light {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  }
+
+  .education-button {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+  }
+
+  .education-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 15px -3px rgba(59, 130, 246, 0.2);
+  }
+
+  .education-button-secondary {
+    @apply bg-white hover:bg-gray-50 text-blue-600 border border-blue-200 font-medium py-2 px-4 rounded-lg;
+    transition: all 0.2s ease;
+  }
+
+  .education-button-secondary:hover {
+    @apply border-blue-300;
+    transform: translateY(-1px);
+  }
+
+  .education-input {
+    @apply bg-white border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+    transition: all 0.2s ease;
+  }
+
+  .education-input:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .education-progress {
+    @apply bg-gray-200 rounded-full overflow-hidden;
+  }
+
+  .education-progress-bar {
+    @apply bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full;
+    transition: width 0.3s ease;
+  }
+
+  .education-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .education-badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .education-badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .education-badge-error {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .education-badge-info {
+    @apply bg-blue-100 text-blue-800;
   }
 }
 

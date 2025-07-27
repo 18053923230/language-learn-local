@@ -57,58 +57,80 @@ export function SubtitleDetectionDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
+      <DialogContent className="sm:max-w-md bg-white rounded-2xl shadow-2xl border-0">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="flex items-center space-x-3 text-xl font-bold">
             {isExactMatch ? (
-              <CheckCircle className="w-5 h-5 text-green-600" />
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
             ) : (
-              <AlertCircle className="w-5 h-5 text-blue-600" />
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-blue-600" />
+              </div>
             )}
-            <span>
+            <span className="text-gray-900">
               {isExactMatch ? "Exact Match Found" : "Similar Video Found"}
             </span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-600 leading-relaxed">
             {isExactMatch
               ? "We found existing subtitles for this exact video."
               : "We found subtitles for a similar video that might match."}
           </DialogDescription>
         </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Video Info */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">Video Details</h4>
-            <div className="space-y-1 text-sm text-gray-600">
-              <div>
-                <strong>Name:</strong> {record.videoName}
+        <div className="space-y-6">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+            <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
+              <span className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                <span className="text-blue-600 text-xs">📹</span>
+              </span>
+              Video Details
+            </h4>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-start">
+                <span className="text-gray-600 font-medium">Name:</span>
+                <span className="text-gray-900 text-right max-w-xs truncate">
+                  {record.videoName}
+                </span>
               </div>
-              <div>
-                <strong>Language:</strong> {record.language}
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Language:</span>
+                <span className="text-blue-600 font-semibold">
+                  {record.language}
+                </span>
               </div>
-              <div>
-                <strong>Duration:</strong> {formatDuration(record.duration)}
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Duration:</span>
+                <span className="text-gray-900 font-semibold">
+                  {formatDuration(record.duration)}
+                </span>
               </div>
-              <div>
-                <strong>Subtitles:</strong> {record.subtitles.length} segments
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Subtitles:</span>
+                <span className="text-purple-600 font-semibold">
+                  {record.subtitles.length} segments
+                </span>
               </div>
-              <div>
-                <strong>Confidence:</strong>{" "}
-                {Math.round(record.confidence * 100)}%
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Confidence:</span>
+                <span className="text-green-600 font-semibold">
+                  {Math.round(record.confidence * 100)}%
+                </span>
               </div>
-              <div>
-                <strong>Created:</strong> {formatDate(record.createdAt)}
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium">Created:</span>
+                <span className="text-gray-900 font-semibold">
+                  {formatDate(record.createdAt)}
+                </span>
               </div>
             </div>
           </div>
-
-          {/* Action Buttons */}
           <div className="flex space-x-3">
             <Button
               onClick={handleLoadSubtitles}
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -117,13 +139,16 @@ export function SubtitleDetectionDialog({
               )}
               {isLoading ? "Loading..." : "Load Subtitles"}
             </Button>
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="h-12 px-6 border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-xl transition-all duration-200"
+            >
               Cancel
             </Button>
           </div>
-
-          {/* Info Text */}
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-gray-500 text-center leading-relaxed">
             {isExactMatch
               ? "Loading these subtitles will avoid duplicate recognition costs."
               : "This will link the existing subtitles to your current video."}

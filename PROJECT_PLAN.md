@@ -773,6 +773,18 @@ private generateMockSegments(videoId: string, language: string): Subtitle[] {
   - ✅ 清理冗余代码和文件
   - ✅ 移除浏览器端语音识别相关代码
   - ✅ 统一使用 AssemblyAI 服务
+  - ✅ 修复浏览器环境兼容性问题
+  - ✅ 使用 REST API 替代 SDK
+  - ✅ 实现完整的音频上传和转录流程
+  - ✅ 修复 AssemblyAI API 认证问题
+  - ✅ 使用正确的 Authorization header 格式
+  - ✅ 直接上传音频 Blob 而不是 Base64
+  - ✅ 解决 CORS 问题，创建服务器端 API 路由
+  - ✅ 实现完整的服务器端 AssemblyAI 集成
+  - ✅ 简化客户端代码，移除直接 API 调用
+  - ✅ 修复 API 认证头格式（Authorization 而不是 authorization）
+  - ✅ 修复参数名称（filter_profanity 而不是 profanity_filter）
+  - ✅ 修复语言代码映射（en_us 而不是 en）
 
 ### 技术决策记录
 

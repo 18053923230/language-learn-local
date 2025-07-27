@@ -1,4 +1,3 @@
-import { AssemblyAI } from "assemblyai";
 import { Subtitle } from "@/types/subtitle";
 
 export interface AssemblyAIResult {
@@ -17,19 +16,11 @@ export interface ProcessingProgress {
 }
 
 export class AssemblyAIService {
-  private client: AssemblyAI | null = null;
   private isInitialized = false;
   private progressCallback?: (progress: ProcessingProgress) => void;
 
   constructor() {
-    // Initialize with API key from environment variable
-    const apiKey = process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY;
-
-    if (apiKey) {
-      this.client = new AssemblyAI({
-        apiKey: apiKey,
-      });
-    }
+    // API key is now handled server-side
   }
 
   async initialize(language: string = "en"): Promise<void> {
@@ -42,12 +33,6 @@ export class AssemblyAIService {
     });
 
     try {
-      if (!this.client) {
-        throw new Error(
-          "AssemblyAI client not initialized. Please check API key."
-        );
-      }
-
       this.isInitialized = true;
       this.updateProgress({
         stage: "loading",
@@ -72,53 +57,45 @@ export class AssemblyAIService {
       await this.initialize(language);
     }
 
-    if (!this.client) {
-      throw new Error("AssemblyAI client not available");
-    }
-
     this.progressCallback = onProgress;
 
     this.updateProgress({
       stage: "processing",
       progress: 10,
-      message: "Uploading audio to AssemblyAI...",
+      message: "Preparing audio for transcription...",
     });
 
     try {
-      // Convert blob to base64 for upload
-      const base64Audio = await this.blobToBase64(audioBlob);
-
       this.updateProgress({
         stage: "processing",
         progress: 20,
-        message: "Starting transcription with AssemblyAI...",
+        message: "Uploading audio to server...",
       });
 
-      // Configure transcription parameters
-      const params = {
-        audio: base64Audio,
-        speech_model: "universal" as const, // Use universal model for better accuracy
-        language_code: this.mapLanguageCode(language),
-        punctuate: true,
-        format_text: true,
-        speaker_labels: false, // Disable for simpler output
-        auto_highlights: false,
-        content_safety: false,
-        iab_categories: false,
-        auto_chapters: false,
-        entity_detection: false,
-        sentiment_analysis: false,
-        disfluencies: false,
-        profanity_filter: false,
-        boost_param: "low" as const, // Optimize for speed
-      };
+      // Create FormData for upload
+      const formData = new FormData();
+      formData.append("audio", audioBlob);
+      formData.append("language", language);
 
-      console.log("Starting AssemblyAI transcription with params:", params);
+      this.updateProgress({
+        stage: "processing",
+        progress: 30,
+        message: "Starting transcription...",
+      });
 
-      // Start transcription
-      const transcript = await this.client.transcripts.transcribe(params);
+      // Call our API route
+      const response = await fetch("/api/transcribe", {
+        method: "POST",
+        body: formData,
+      });
 
-      console.log("AssemblyAI transcription result:", transcript);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Transcription API error:", errorText);
+        throw new Error(
+          `Transcription failed: ${response.status} ${response.statusText}`
+        );
+      }
 
       this.updateProgress({
         stage: "processing",
@@ -126,8 +103,7 @@ export class AssemblyAIService {
         message: "Processing transcription results...",
       });
 
-      // Convert AssemblyAI result to our subtitle format
-      const segments = this.convertToSubtitles(transcript, videoId, language);
+      const result = await response.json();
 
       this.updateProgress({
         stage: "completed",
@@ -136,10 +112,10 @@ export class AssemblyAIService {
       });
 
       return {
-        segments,
-        language,
-        duration: this.calculateDuration(segments),
-        confidence: this.calculateAverageConfidence(segments),
+        segments: result.segments,
+        language: result.language,
+        duration: result.duration,
+        confidence: result.confidence,
       };
     } catch (error) {
       console.error("AssemblyAI transcription error:", error);
@@ -152,20 +128,6 @@ export class AssemblyAIService {
       });
       throw error;
     }
-  }
-
-  private async blobToBase64(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        // Remove data URL prefix to get just the base64 string
-        const base64 = result.split(",")[1];
-        resolve(base64);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
   }
 
   private convertToSubtitles(
@@ -286,12 +248,11 @@ export class AssemblyAIService {
   }
 
   async cleanup(): Promise<void> {
-    // No cleanup needed for API service
     this.isInitialized = false;
   }
 
   isSupported(): boolean {
-    return this.client !== null;
+    return true; // Always supported when using server-side API
   }
 
   getAvailableModels(): string[] {
@@ -305,11 +266,11 @@ export class AssemblyAIService {
   // Method to check API key validity
   async testConnection(): Promise<boolean> {
     try {
-      if (!this.client) return false;
-
-      // Try a simple API call to test connection
-      const response = await this.client.transcripts.list({ limit: 1 });
-      return true;
+      const response = await fetch("/api/transcribe", {
+        method: "POST",
+        body: new FormData(), // Empty form data for testing
+      });
+      return response.status !== 500; // If not 500, API is working
     } catch (error) {
       console.error("AssemblyAI connection test failed:", error);
       return false;

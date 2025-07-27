@@ -19,6 +19,16 @@ interface VideoPlayerProps {
   onProgress?: (currentTime: number, duration: number) => void;
   onDuration?: (duration: number) => void;
   onReady?: () => void;
+  onRef?: (ref: VideoPlayerRef) => void;
+}
+
+export interface VideoPlayerRef {
+  seekTo: (time: number) => void;
+  playSegment: (start: number, end: number) => void;
+  play: () => void;
+  pause: () => void;
+  segmentTimer?: NodeJS.Timeout;
+  cleanupSegment?: () => void;
 }
 
 export function VideoPlayer({
@@ -26,6 +36,7 @@ export function VideoPlayer({
   onProgress,
   onDuration,
   onReady,
+  onRef,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,6 +52,79 @@ export function VideoPlayer({
   const [error, setError] = useState<string | null>(null);
 
   const { setPlayerState } = useAppStore();
+
+  // 创建播放器引用
+  const playerRef = useRef<VideoPlayerRef>({
+    seekTo: (time: number) => {
+      if (videoRef.current) {
+        videoRef.current.currentTime = time;
+        setCurrentTime(time);
+      }
+    },
+    playSegment: (start: number, end: number) => {
+      if (videoRef.current) {
+        // 清除之前的定时器
+        if (playerRef.current.segmentTimer) {
+          clearTimeout(playerRef.current.segmentTimer);
+        }
+
+        // 设置播放位置并开始播放
+        videoRef.current.currentTime = start;
+        setCurrentTime(start);
+
+        videoRef.current.play().catch((err) => {
+          console.error("Error playing segment:", err);
+        });
+
+        // 设置定时器在结束时暂停
+        const segmentDuration = (end - start) * 1000;
+        playerRef.current.segmentTimer = setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.pause();
+            setPlaying(false);
+          }
+        }, segmentDuration);
+
+        // 添加时间更新监听器来检查是否到达结束位置
+        const checkEndTime = () => {
+          if (videoRef.current && videoRef.current.currentTime >= end) {
+            videoRef.current.pause();
+            setPlaying(false);
+            videoRef.current.removeEventListener("timeupdate", checkEndTime);
+          }
+        };
+
+        videoRef.current.addEventListener("timeupdate", checkEndTime);
+
+        // 保存清理函数
+        playerRef.current.cleanupSegment = () => {
+          videoRef.current?.removeEventListener("timeupdate", checkEndTime);
+          if (playerRef.current.segmentTimer) {
+            clearTimeout(playerRef.current.segmentTimer);
+          }
+        };
+      }
+    },
+    play: () => {
+      if (videoRef.current) {
+        videoRef.current.play().catch((err) => {
+          console.error("Error playing video:", err);
+        });
+      }
+    },
+    pause: () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+    },
+  });
+
+  // 暴露播放器引用给父组件
+  useEffect(() => {
+    if (onRef) {
+      onRef(playerRef.current);
+    }
+  }, [onRef]);
 
   useEffect(() => {
     setPlayerState({
@@ -66,8 +150,22 @@ export function VideoPlayer({
       setPlaying(false);
       setCurrentTime(0);
       setError(null);
+
+      // 清理之前的段落播放
+      if (playerRef.current.cleanupSegment) {
+        playerRef.current.cleanupSegment();
+      }
     }
   }, [url]);
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
+      if (playerRef.current.cleanupSegment) {
+        playerRef.current.cleanupSegment();
+      }
+    };
+  }, []);
 
   const handlePlayPause = () => {
     if (videoRef.current) {

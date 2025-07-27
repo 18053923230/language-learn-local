@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FileUpload } from "@/components/file-upload";
-import { VideoPlayer } from "@/components/video-player";
+import { VideoPlayer, VideoPlayerRef } from "@/components/video-player";
 import { SubtitleList } from "@/components/subtitle-list";
 import { LearningPanel } from "@/components/learning-panel";
 
@@ -24,6 +24,9 @@ export default function HomePage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcriptionProgress, setTranscriptionProgress] = useState<any>(null);
+  const [videoPlayerRef, setVideoPlayerRef] = useState<VideoPlayerRef | null>(
+    null
+  );
 
   const handleFileSelect = async (file: File, language: string) => {
     setIsProcessing(true);
@@ -103,8 +106,11 @@ export default function HomePage() {
   };
 
   const handlePlaySegment = (start: number, end: number) => {
-    // TODO: Implement segment playback
-    console.log("Play segment:", start, end);
+    if (videoPlayerRef) {
+      videoPlayerRef.playSegment(start, end);
+    } else {
+      console.log("Video player not ready, play segment:", start, end);
+    }
   };
 
   // 使用 useVocabulary hook
@@ -254,6 +260,7 @@ export default function HomePage() {
                     url={currentVideo.url}
                     onProgress={handleVideoProgress}
                     onDuration={handleDurationUpdate}
+                    onRef={setVideoPlayerRef}
                   />
                 </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +43,9 @@ export function LearningPanel({
     phonetic?: string;
   } | null>(null);
   const [isLoadingWord, setIsLoadingWord] = useState(false);
+  const [isRepeating, setIsRepeating] = useState(false);
+  const [repeatProgress, setRepeatProgress] = useState(0);
+  const repeatTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleWordClick = (word: string) => {
     setSelectedWord(word);
@@ -96,9 +99,61 @@ export function LearningPanel({
 
   const handlePlaySegment = () => {
     if (currentSubtitle && onPlaySegment) {
-      onPlaySegment(currentSubtitle.start, currentSubtitle.end);
+      if (playbackMode === "repeat" && !isRepeating) {
+        startRepeatPlayback();
+      } else {
+        onPlaySegment(currentSubtitle.start, currentSubtitle.end);
+      }
     }
   };
+
+  const startRepeatPlayback = () => {
+    if (!currentSubtitle || !onPlaySegment) return;
+
+    setIsRepeating(true);
+    setRepeatProgress(0);
+    let currentRepeat = 0;
+
+    const playNextRepeat = () => {
+      if (currentRepeat < repeatCount) {
+        currentRepeat++;
+        setRepeatProgress(currentRepeat);
+        onPlaySegment(currentSubtitle.start, currentSubtitle.end);
+
+        // 计算下一轮播放的延迟时间
+        const segmentDuration =
+          (currentSubtitle.end - currentSubtitle.start) * 1000;
+        const delay = segmentDuration + 500; // 额外500ms间隔
+
+        repeatTimerRef.current = setTimeout(playNextRepeat, delay);
+      } else {
+        // 循环播放完成
+        setIsRepeating(false);
+        setRepeatProgress(0);
+      }
+    };
+
+    // 开始第一轮播放
+    playNextRepeat();
+  };
+
+  const stopRepeatPlayback = () => {
+    if (repeatTimerRef.current) {
+      clearTimeout(repeatTimerRef.current);
+      repeatTimerRef.current = null;
+    }
+    setIsRepeating(false);
+    setRepeatProgress(0);
+  };
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (repeatTimerRef.current) {
+        clearTimeout(repeatTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleAddToVocabulary = () => {
     if (selectedWord && currentSubtitle && onAddToVocabulary) {
@@ -184,20 +239,35 @@ export function LearningPanel({
               variant="outline"
               size="sm"
               onClick={handlePlaySegment}
+              disabled={isRepeating}
               className="flex-1"
             >
-              <Play className="w-4 h-4 mr-2" />
-              Play Segment
+              {isRepeating ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  {repeatProgress}/{repeatCount}
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 mr-2" />
+                  Play Segment
+                </>
+              )}
             </Button>
 
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                // TODO: Implement repeat functionality
-              }}
+              onClick={isRepeating ? stopRepeatPlayback : handlePlaySegment}
+              className={
+                isRepeating ? "bg-red-50 border-red-200 text-red-600" : ""
+              }
             >
-              <Repeat className="w-4 h-4" />
+              {isRepeating ? (
+                <RotateCcw className="w-4 h-4" />
+              ) : (
+                <Repeat className="w-4 h-4" />
+              )}
             </Button>
           </div>
 

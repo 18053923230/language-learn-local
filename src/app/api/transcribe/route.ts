@@ -167,7 +167,7 @@ function convertToSubtitles(
   const segments: any[] = [];
 
   if (transcript.utterances && Array.isArray(transcript.utterances)) {
-    // Process utterances with timestamps
+    // Process utterances with timestamps - these are already well-segmented
     transcript.utterances.forEach((utterance: any, index: number) => {
       if (utterance.text && utterance.text.trim()) {
         const segment = {
@@ -183,57 +183,119 @@ function convertToSubtitles(
       }
     });
   } else if (transcript.words && Array.isArray(transcript.words)) {
-    // Process individual words and group them into segments
+    // Enhanced smart segmentation with better voice detection
     let currentSegment: any = null;
     let wordCount = 0;
-    const maxWordsPerSegment = 15;
+    let lastWordTime = 0;
+    let consecutiveSilence = 0;
+
+    // 优化参数 - 针对背景音和更自然的分段
+    const maxWordsPerSegment = 25; // 增加单词数，减少过度分段
+    const maxSegmentDuration = 12; // 增加最大时长，适应更长的句子
+    const silenceThreshold = 2.0; // 增加静音阈值，避免背景音干扰
+    const minSegmentDuration = 2.0; // 最小段时长，避免过短分段
+    const maxConsecutiveSilence = 3; // 连续静音次数阈值
 
     transcript.words.forEach((word: any, index: number) => {
+      const wordStart = word.start / 1000;
+      const wordEnd = word.end / 1000;
+
+      // 计算时间间隔
+      const timeSinceLastWord = wordStart - lastWordTime;
+
+      // 检测连续静音 - 用于处理背景音
+      if (timeSinceLastWord > 0.5) {
+        // 0.5秒以上算静音
+        consecutiveSilence++;
+      } else {
+        consecutiveSilence = 0;
+      }
+
+      // 智能分段检测 - 考虑背景音干扰
+      const isLongSilence = timeSinceLastWord > silenceThreshold;
+      const isSentenceEnd = word.text.match(/[.!?]$/);
+      const isNewSentence =
+        word.text.match(/^[A-Z]/) && timeSinceLastWord > 1.0;
+      const isExcessiveSilence = consecutiveSilence >= maxConsecutiveSilence;
+
+      // 综合判断是否应该分段
+      const isNaturalBreak =
+        isLongSilence || isSentenceEnd || isNewSentence || isExcessiveSilence;
+
       if (!currentSegment) {
+        // 开始新段落
         currentSegment = {
           id: `${videoId}_segment_${segments.length}`,
           text: word.text,
-          start: word.start / 1000,
-          end: word.end / 1000,
+          start: wordStart,
+          end: wordEnd,
           confidence: word.confidence || 0.9,
           language,
           videoId,
         };
         wordCount = 1;
+        lastWordTime = wordEnd;
       } else {
-        currentSegment.text += " " + word.text;
-        currentSegment.end = word.end / 1000;
-        currentSegment.confidence = Math.min(
-          currentSegment.confidence,
-          word.confidence || 0.9
-        );
-        wordCount++;
-      }
+        // 检查是否应该开始新段落
+        const segmentDuration = wordEnd - currentSegment.start;
+        const shouldBreak =
+          (isNaturalBreak && segmentDuration >= minSegmentDuration) ||
+          wordCount >= maxWordsPerSegment ||
+          segmentDuration >= maxSegmentDuration ||
+          index === transcript.words.length - 1;
 
-      // Create new segment if we have enough words or reach the end
-      if (
-        wordCount >= maxWordsPerSegment ||
-        index === transcript.words.length - 1
-      ) {
-        if (currentSegment) {
+        if (shouldBreak && wordCount > 0) {
+          // 完成当前段落
           segments.push(currentSegment);
-          currentSegment = null;
-          wordCount = 0;
+
+          // 开始新段落
+          currentSegment = {
+            id: `${videoId}_segment_${segments.length}`,
+            text: word.text,
+            start: wordStart,
+            end: wordEnd,
+            confidence: word.confidence || 0.9,
+            language,
+            videoId,
+          };
+          wordCount = 1;
+        } else {
+          // 继续当前段落
+          currentSegment.text += " " + word.text;
+          currentSegment.end = wordEnd;
+          currentSegment.confidence = Math.min(
+            currentSegment.confidence,
+            word.confidence || 0.9
+          );
+          wordCount++;
         }
+        lastWordTime = wordEnd;
       }
     });
+
+    // 添加最后一个段落
+    if (currentSegment && wordCount > 0) {
+      segments.push(currentSegment);
+    }
   } else if (transcript.text) {
-    // Fallback: single text result
-    const segment = {
-      id: `${videoId}_segment_0`,
-      text: transcript.text.trim(),
-      start: 0,
-      end: 30, // Default duration
-      confidence: 0.9,
-      language,
-      videoId,
-    };
-    segments.push(segment);
+    // Fallback: split text into sentences for better segmentation
+    const sentences: string[] = transcript.text
+      .trim()
+      .split(/(?<=[.!?])\s+/)
+      .filter((sentence: string) => sentence.trim().length > 0);
+
+    sentences.forEach((sentence: string, index: number) => {
+      const segment = {
+        id: `${videoId}_segment_${index}`,
+        text: sentence.trim(),
+        start: index * 5, // Approximate timing
+        end: (index + 1) * 5,
+        confidence: 0.9,
+        language,
+        videoId,
+      };
+      segments.push(segment);
+    });
   }
 
   return segments;

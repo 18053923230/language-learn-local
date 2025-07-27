@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Subtitle } from "@/types/subtitle";
 
 const ASSEMBLYAI_API_KEY =
   process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY ||
@@ -160,121 +161,163 @@ function mapLanguageCode(language: string): string {
 }
 
 function convertToSubtitles(
-  transcript: any,
+  transcript: Record<string, unknown>,
   videoId: string,
   language: string
-): any[] {
-  const segments: any[] = [];
+): Subtitle[] {
+  const segments: Subtitle[] = [];
 
   if (transcript.utterances && Array.isArray(transcript.utterances)) {
-    // Process utterances with timestamps - these are already well-segmented
-    transcript.utterances.forEach((utterance: any, index: number) => {
-      if (utterance.text && utterance.text.trim()) {
-        const segment = {
-          id: `${videoId}_segment_${index}`,
-          text: utterance.text.trim(),
-          start: utterance.start / 1000, // Convert from milliseconds to seconds
-          end: utterance.end / 1000,
-          confidence: utterance.confidence || 0.9,
-          language,
-          videoId,
-        };
-        segments.push(segment);
-      }
-    });
-  } else if (transcript.words && Array.isArray(transcript.words)) {
-    // Enhanced smart segmentation with better voice detection
-    let currentSegment: any = null;
-    let wordCount = 0;
-    let lastWordTime = 0;
-    let consecutiveSilence = 0;
+    // 对utterances进行智能合并，基于标点和语义
+    let currentSegment: Subtitle | null = null;
+    let currentText = "";
+    let segmentEnd = 0;
+    let segmentConfidence = 1.0;
 
-    // 优化参数 - 针对背景音和更自然的分段
-    const maxWordsPerSegment = 25; // 增加单词数，减少过度分段
-    const maxSegmentDuration = 12; // 增加最大时长，适应更长的句子
-    const silenceThreshold = 2.0; // 增加静音阈值，避免背景音干扰
-    const minSegmentDuration = 2.0; // 最小段时长，避免过短分段
-    const maxConsecutiveSilence = 3; // 连续静音次数阈值
+    transcript.utterances.forEach((utterance: Record<string, unknown>) => {
+      if (
+        !utterance.text ||
+        typeof utterance.text !== "string" ||
+        !utterance.text.trim()
+      )
+        return;
 
-    transcript.words.forEach((word: any, index: number) => {
-      const wordStart = word.start / 1000;
-      const wordEnd = word.end / 1000;
+      const utteranceText = utterance.text.trim();
+      const utteranceStart = (utterance.start as number) / 1000;
+      const utteranceEnd = (utterance.end as number) / 1000;
+      const utteranceConfidence = (utterance.confidence as number) || 0.9;
 
-      // 计算时间间隔
-      const timeSinceLastWord = wordStart - lastWordTime;
-
-      // 检测连续静音 - 用于处理背景音
-      if (timeSinceLastWord > 0.5) {
-        // 0.5秒以上算静音
-        consecutiveSilence++;
-      } else {
-        consecutiveSilence = 0;
-      }
-
-      // 智能分段检测 - 考虑背景音干扰
-      const isLongSilence = timeSinceLastWord > silenceThreshold;
-      const isSentenceEnd = word.text.match(/[.!?]$/);
-      const isNewSentence =
-        word.text.match(/^[A-Z]/) && timeSinceLastWord > 1.0;
-      const isExcessiveSilence = consecutiveSilence >= maxConsecutiveSilence;
-
-      // 综合判断是否应该分段
-      const isNaturalBreak =
-        isLongSilence || isSentenceEnd || isNewSentence || isExcessiveSilence;
-
+      // 如果是第一个utterance，初始化段落
       if (!currentSegment) {
-        // 开始新段落
         currentSegment = {
           id: `${videoId}_segment_${segments.length}`,
-          text: word.text,
-          start: wordStart,
-          end: wordEnd,
-          confidence: word.confidence || 0.9,
+          text: utteranceText,
+          start: utteranceStart,
+          end: utteranceEnd,
+          confidence: utteranceConfidence,
           language,
           videoId,
         };
-        wordCount = 1;
-        lastWordTime = wordEnd;
+        currentText = utteranceText;
+        segmentEnd = utteranceEnd;
+        segmentConfidence = utteranceConfidence;
       } else {
-        // 检查是否应该开始新段落
-        const segmentDuration = wordEnd - currentSegment.start;
-        const shouldBreak =
-          (isNaturalBreak && segmentDuration >= minSegmentDuration) ||
-          wordCount >= maxWordsPerSegment ||
-          segmentDuration >= maxSegmentDuration ||
-          index === transcript.words.length - 1;
+        // 检查是否应该分段
+        const shouldBreak = shouldBreakUtterance(
+          utteranceText,
+          currentText,
+          utteranceStart,
+          segmentEnd
+        );
 
-        if (shouldBreak && wordCount > 0) {
+        if (shouldBreak && currentText.trim()) {
           // 完成当前段落
+          currentSegment.text = currentText.trim();
+          currentSegment.end = segmentEnd;
+          currentSegment.confidence = segmentConfidence;
           segments.push(currentSegment);
 
           // 开始新段落
           currentSegment = {
             id: `${videoId}_segment_${segments.length}`,
-            text: word.text,
-            start: wordStart,
-            end: wordEnd,
-            confidence: word.confidence || 0.9,
+            text: utteranceText,
+            start: utteranceStart,
+            end: utteranceEnd,
+            confidence: utteranceConfidence,
             language,
             videoId,
           };
-          wordCount = 1;
+          currentText = utteranceText;
+          segmentEnd = utteranceEnd;
+          segmentConfidence = utteranceConfidence;
         } else {
           // 继续当前段落
-          currentSegment.text += " " + word.text;
-          currentSegment.end = wordEnd;
-          currentSegment.confidence = Math.min(
-            currentSegment.confidence,
-            word.confidence || 0.9
-          );
-          wordCount++;
+          currentText += " " + utteranceText;
+          segmentEnd = utteranceEnd;
+          segmentConfidence = Math.min(segmentConfidence, utteranceConfidence);
         }
-        lastWordTime = wordEnd;
       }
     });
 
     // 添加最后一个段落
-    if (currentSegment && wordCount > 0) {
+    if (currentSegment && currentText.trim()) {
+      currentSegment.text = currentText.trim();
+      currentSegment.end = segmentEnd;
+      currentSegment.confidence = segmentConfidence;
+      segments.push(currentSegment);
+    }
+  } else if (transcript.words && Array.isArray(transcript.words)) {
+    // 基于标点的智能分段算法
+    let currentSegment: Subtitle | null = null;
+    let currentText = "";
+    let segmentStart = 0;
+    let segmentEnd = 0;
+    let segmentConfidence = 1.0;
+
+    transcript.words.forEach((word: Record<string, unknown>, index: number) => {
+      const wordStart = (word.start as number) / 1000;
+      const wordEnd = (word.end as number) / 1000;
+      const wordText = word.text as string;
+      const wordConfidence = (word.confidence as number) || 0.9;
+
+      // 如果是第一个单词，初始化段落
+      if (!currentSegment) {
+        currentSegment = {
+          id: `${videoId}_segment_${segments.length}`,
+          text: wordText,
+          start: wordStart,
+          end: wordEnd,
+          confidence: wordConfidence,
+          language,
+          videoId,
+        };
+        currentText = wordText;
+        segmentStart = wordStart;
+        segmentEnd = wordEnd;
+        segmentConfidence = wordConfidence;
+      } else {
+        // 检查是否应该分段
+        const shouldBreak = shouldBreakSegment(
+          wordText,
+          index,
+          transcript.words as Record<string, unknown>[]
+        );
+
+        if (shouldBreak && currentText.trim()) {
+          // 完成当前段落
+          currentSegment.text = currentText.trim();
+          currentSegment.end = segmentEnd;
+          currentSegment.confidence = segmentConfidence;
+          segments.push(currentSegment);
+
+          // 开始新段落
+          currentSegment = {
+            id: `${videoId}_segment_${segments.length}`,
+            text: wordText,
+            start: wordStart,
+            end: wordEnd,
+            confidence: wordConfidence,
+            language,
+            videoId,
+          };
+          currentText = wordText;
+          segmentStart = wordStart;
+          segmentEnd = wordEnd;
+          segmentConfidence = wordConfidence;
+        } else {
+          // 继续当前段落
+          currentText += " " + wordText;
+          segmentEnd = wordEnd;
+          segmentConfidence = Math.min(segmentConfidence, wordConfidence);
+        }
+      }
+    });
+
+    // 添加最后一个段落
+    if (currentSegment && currentText.trim()) {
+      currentSegment.text = currentText.trim();
+      currentSegment.end = segmentEnd;
+      currentSegment.confidence = segmentConfidence;
       segments.push(currentSegment);
     }
   } else if (transcript.text) {
@@ -301,12 +344,108 @@ function convertToSubtitles(
   return segments;
 }
 
-function calculateDuration(segments: any[]): number {
+// 判断是否应该分段的辅助函数（用于words）
+function shouldBreakSegment(
+  wordText: string,
+  wordIndex: number,
+  allWords: Record<string, unknown>[]
+): boolean {
+  // 1. 句末标点：句号、感叹号、问号
+  if (wordText.match(/[.!?]$/)) {
+    return true;
+  }
+
+  // 2. 段落标点：冒号、分号（在适当长度后）
+  if (wordText.match(/[:;]$/) && wordIndex > 5) {
+    return true;
+  }
+
+  // 3. 逗号后的长停顿（超过1.5秒）
+  if (wordText.match(/,$/) && wordIndex < allWords.length - 1) {
+    const nextWord = allWords[wordIndex + 1];
+    const timeGap =
+      ((nextWord.start as number) - (allWords[wordIndex].end as number)) / 1000;
+    if (timeGap > 1.5) {
+      return true;
+    }
+  }
+
+  // 4. 新句子开始（大写字母开头且前面有足够停顿）
+  if (wordText.match(/^[A-Z]/) && wordIndex > 0) {
+    const prevWord = allWords[wordIndex - 1];
+    const timeGap =
+      ((allWords[wordIndex].start as number) - (prevWord.end as number)) / 1000;
+    if (timeGap > 1.0) {
+      return true;
+    }
+  }
+
+  // 5. 避免过长的段落（超过15个单词）
+  const currentSegmentWords = allWords.slice(
+    Math.max(0, wordIndex - 15),
+    wordIndex + 1
+  );
+  const hasRecentBreak = currentSegmentWords.some(
+    (word, idx) =>
+      idx < currentSegmentWords.length - 1 &&
+      (word.text as string).match(/[.!?]$/)
+  );
+
+  if (wordIndex > 15 && !hasRecentBreak) {
+    return true;
+  }
+
+  return false;
+}
+
+// 判断是否应该分段的辅助函数（用于utterances）
+function shouldBreakUtterance(
+  utteranceText: string,
+  currentText: string,
+  utteranceStart: number,
+  segmentEnd: number
+): boolean {
+  // 1. 句末标点：句号、感叹号、问号
+  if (utteranceText.match(/[.!?]$/)) {
+    return true;
+  }
+
+  // 2. 段落标点：冒号、分号
+  if (utteranceText.match(/[:;]$/)) {
+    return true;
+  }
+
+  // 3. 长停顿（超过2秒）
+  const timeGap = utteranceStart - segmentEnd;
+  if (timeGap > 2.0) {
+    return true;
+  }
+
+  // 4. 新句子开始（大写字母开头）
+  if (utteranceText.match(/^[A-Z]/) && timeGap > 0.5) {
+    return true;
+  }
+
+  // 5. 避免过长的段落（超过50个字符或包含多个句子）
+  const combinedText = currentText + " " + utteranceText;
+  if (combinedText.length > 100) {
+    return true;
+  }
+
+  // 6. 如果当前文本已经包含句末标点，开始新段落
+  if (currentText.match(/[.!?]$/)) {
+    return true;
+  }
+
+  return false;
+}
+
+function calculateDuration(segments: Subtitle[]): number {
   if (segments.length === 0) return 0;
   return Math.max(...segments.map((s) => s.end));
 }
 
-function calculateAverageConfidence(segments: any[]): number {
+function calculateAverageConfidence(segments: Subtitle[]): number {
   if (segments.length === 0) return 0;
   const total = segments.reduce((sum, segment) => sum + segment.confidence, 0);
   return total / segments.length;

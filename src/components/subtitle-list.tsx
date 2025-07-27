@@ -12,10 +12,12 @@ import {
   Download,
   Settings,
   Trash2,
+  Zap,
 } from "lucide-react";
 import { SubtitleEditor } from "./subtitle-editor";
 import { SubtitleExporter } from "@/lib/subtitle-export";
 import { SubtitleSaveButton } from "./subtitle-save-button";
+import { SubtitleOptimizer } from "./subtitle-optimizer";
 import { toast } from "sonner";
 
 interface SubtitleListProps {
@@ -37,6 +39,7 @@ export function SubtitleList({
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredSubtitles, setFilteredSubtitles] = useState<Subtitle[]>([]);
   const [editingSubtitle, setEditingSubtitle] = useState<Subtitle | null>(null);
+  const [showOptimizer, setShowOptimizer] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
 
   useEffect(() => {
@@ -97,6 +100,12 @@ export function SubtitleList({
     }
   };
 
+  const handleOptimizeSubtitles = (optimizedSubtitles: Subtitle[]) => {
+    setSubtitles(optimizedSubtitles);
+    setShowOptimizer(false);
+    toast.success("Subtitles optimized successfully!");
+  };
+
   const isCurrentSubtitle = (subtitle: Subtitle) => {
     if (!currentSubtitle) return false;
     return subtitle.id === currentSubtitle.id;
@@ -112,22 +121,27 @@ export function SubtitleList({
       {/* Header with Search and Export */}
       <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900 flex items-center">
-            <span className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mr-3 shadow-sm">
-              <span className="text-white text-sm font-bold">📝</span>
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+            <span className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mr-3">
+              <span className="text-white text-xs font-bold">📝</span>
             </span>
-            Subtitles
+            Subtitles ({filteredSubtitles.length} of {subtitles.length})
           </h3>
-          {currentVideo && subtitles.length > 0 && (
-            <SubtitleSaveButton
-              video={currentVideo}
-              subtitles={subtitles}
-              source="assemblyai"
-              onSaved={() => {
-                // 可以在这里添加保存后的回调逻辑
-              }}
-            />
-          )}
+          <div className="flex items-center space-x-2">
+            {currentVideo && (
+              <SubtitleSaveButton video={currentVideo} subtitles={subtitles} />
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowOptimizer(true)}
+              className="education-button-secondary"
+              title="Optimize subtitles"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Optimize
+            </Button>
+          </div>
         </div>
 
         <div className="relative">
@@ -332,15 +346,24 @@ export function SubtitleList({
 
       {/* Subtitle Editor Modal */}
       {editingSubtitle && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <SubtitleEditor
-              subtitle={editingSubtitle}
-              onSave={handleSaveSubtitle}
-              onCancel={() => setEditingSubtitle(null)}
-              onPlaySegment={onPlaySegment}
-            />
-          </div>
+        <div className="mt-6">
+          <SubtitleEditor
+            subtitle={editingSubtitle}
+            onSave={handleSaveSubtitle}
+            onCancel={() => setEditingSubtitle(null)}
+            onPlaySegment={onPlaySegment}
+          />
+        </div>
+      )}
+
+      {/* Subtitle Optimizer */}
+      {showOptimizer && (
+        <div className="mt-6">
+          <SubtitleOptimizer
+            subtitles={subtitles}
+            onOptimize={handleOptimizeSubtitles}
+            onCancel={() => setShowOptimizer(false)}
+          />
         </div>
       )}
     </div>

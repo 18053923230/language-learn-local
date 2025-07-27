@@ -8,6 +8,7 @@ export interface Video {
   language: string;
   uploadedAt: Date;
   processed: boolean;
+  file?: File; // Optional file reference for transcription
 }
 
 export interface VideoPlayerState {

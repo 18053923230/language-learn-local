@@ -4,6 +4,7 @@ export interface VocabularyItem {
   definition: string;
   example?: string;
   partOfSpeech: string;
+  pronunciation?: string;
   language: string;
   addedAt: Date;
   lastReviewed?: Date;

@@ -1,0 +1,19 @@
+1
+00:00:00,000 --> 00:00:03,000
+Hello, welcome to our language learning application.
+
+2
+00:00:03,000 --> 00:00:06,000
+This is a test subtitle file for demonstration purposes.
+
+3
+00:00:06,000 --> 00:00:09,000
+You can upload subtitle files in various formats.
+
+4
+00:00:09,000 --> 00:00:12,000
+Supported formats include SRT, VTT, TXT, and JSON.
+
+5
+00:00:12,000 --> 00:00:15,000
+Thank you for using our language learning platform. 

@@ -96,19 +96,15 @@ export function VocabularyManager() {
                 </div>
               </div>
               <p className="text-gray-700">{item.definition}</p>
-              {item.examples.length > 0 && (
+              {item.example && (
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Examples:</p>
-                  <ul className="text-sm text-gray-700 list-disc list-inside">
-                    {item.examples.map((example, index) => (
-                      <li key={index}>{example}</li>
-                    ))}
-                  </ul>
+                  <p className="text-sm font-medium text-gray-600">Example:</p>
+                  <p className="text-sm text-gray-700">{item.example}</p>
                 </div>
               )}
               <div className="text-xs text-gray-500">
-                Added: {new Date(item.createdAt).toLocaleDateString()} |
-                Reviews: {item.reviewCount}
+                Added: {new Date(item.addedAt).toLocaleDateString()} | Reviews:{" "}
+                {item.reviewCount}
               </div>
             </div>
           ))

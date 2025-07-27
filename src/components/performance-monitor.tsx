@@ -6,7 +6,6 @@ import {
   Activity,
   Cpu,
   HardDrive,
-  Memory,
   RefreshCw,
   TrendingUp,
   TrendingDown,
@@ -287,7 +286,7 @@ export function PerformanceMonitor() {
           {/* Memory Usage */}
           <div className="bg-white border rounded-lg p-4">
             <div className="flex items-center space-x-2 mb-2">
-              <Memory className="w-4 h-4 text-blue-600" />
+              <Activity className="w-4 h-4 text-blue-600" />
               <span className="font-medium">Memory</span>
             </div>
             <div className="space-y-1 text-sm">

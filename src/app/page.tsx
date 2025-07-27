@@ -6,26 +6,20 @@ import { VideoPlayer } from "@/components/video-player";
 import { SubtitleList } from "@/components/subtitle-list";
 import { LearningPanel } from "@/components/learning-panel";
 import { TranscriptionProgress } from "@/components/transcription-progress";
+import { SubtitleProcessor } from "@/components/subtitle-processor";
 import { useAppStore } from "@/lib/store";
 import { StorageManager } from "@/lib/storage";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { Video } from "@/types/video";
 import { Subtitle } from "@/types/subtitle";
-import { VocabularyItem } from "@/types/vocabulary";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Settings, BookText } from "lucide-react";
+import { BookOpen, Settings } from "lucide-react";
 import Link from "next/link";
-import { VocabularyLearning } from "@/components/vocabulary-learning";
 
 export default function HomePage() {
-  const {
-    currentVideo,
-    setCurrentVideo,
-    setSubtitles,
-    setCurrentSubtitle,
-    addVocabularyItem,
-  } = useAppStore();
+  const { currentVideo, setCurrentVideo, setSubtitles, setCurrentSubtitle } =
+    useAppStore();
 
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -33,7 +27,6 @@ export default function HomePage() {
   const {
     isProcessing: isTranscribing,
     progress: transcriptionProgress,
-    error: transcriptionError,
     transcribeVideo,
     cancelTranscription,
   } = useSpeechRecognition();
@@ -70,27 +63,11 @@ export default function HomePage() {
         lastAccessed: new Date(),
       });
 
-      // Start speech recognition
-      const result = await transcribeVideo(file, video.id, language, {
-        model: "base", // Use base model for better accuracy
-        onComplete: async (whisperResult) => {
-          // Save subtitles to local storage
-          await StorageManager.saveSubtitles(whisperResult.segments);
-
-          // Update video as processed
-          const updatedVideo = { ...video, processed: true };
-          setCurrentVideo(updatedVideo);
-          await StorageManager.saveVideo(updatedVideo);
-        },
-        onError: (error) => {
-          console.error("Transcription error:", error);
-          // Keep video but mark as not processed
-          setCurrentVideo({ ...video, processed: false });
-        },
-      });
+      // Store the file for later transcription
+      setCurrentVideo({ ...video, file });
     } catch (error) {
       console.error("Error processing video:", error);
-      // If transcription fails, still show the video but without subtitles
+      // If processing fails, still show the video but without subtitles
       const currentVideo = useAppStore.getState().currentVideo;
       if (currentVideo) {
         setCurrentVideo({ ...currentVideo, processed: false });
@@ -139,12 +116,66 @@ export default function HomePage() {
   // 使用 useVocabulary hook
   const { addWord } = useVocabulary();
 
-  const handleAddToVocabulary = async (word: string, context: string) => {
+  const handleAddToVocabulary = async (word: string) => {
     try {
       await addWord(word);
       console.log("Successfully added word to vocabulary:", word);
     } catch (error) {
       console.error("Failed to add word to vocabulary:", error);
+    }
+  };
+
+  const handleSubtitlesLoaded = async (subtitles: Subtitle[]) => {
+    if (!currentVideo) return;
+
+    try {
+      // Save subtitles to local storage
+      await StorageManager.saveSubtitles(subtitles);
+
+      // Update video as processed
+      const updatedVideo = { ...currentVideo, processed: true };
+      setCurrentVideo(updatedVideo);
+      await StorageManager.saveVideo(updatedVideo);
+
+      // Set subtitles in store
+      setSubtitles(subtitles);
+    } catch (error) {
+      console.error("Error saving subtitles:", error);
+    }
+  };
+
+  const handleAutoTranscribe = async () => {
+    if (!currentVideo || !currentVideo.file) return;
+
+    try {
+      // Start speech recognition
+      const result = await transcribeVideo(
+        currentVideo.file,
+        currentVideo.id,
+        currentVideo.language,
+        {
+          model: "base", // Use base model for better accuracy
+          onComplete: async (whisperResult) => {
+            // Save subtitles to local storage
+            await StorageManager.saveSubtitles(whisperResult.segments);
+
+            // Update video as processed
+            const updatedVideo = { ...currentVideo, processed: true };
+            setCurrentVideo(updatedVideo);
+            await StorageManager.saveVideo(updatedVideo);
+
+            // Set subtitles in store
+            setSubtitles(whisperResult.segments);
+          },
+          onError: (error) => {
+            console.error("Transcription error:", error);
+            // Keep video but mark as not processed
+            setCurrentVideo({ ...currentVideo, processed: false });
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Error starting transcription:", error);
     }
   };
 
@@ -198,16 +229,6 @@ export default function HomePage() {
 
               <FileUpload onFileSelect={handleFileSelect} />
 
-              {/* Transcription Progress */}
-              {(isTranscribing || transcriptionProgress) && (
-                <div className="mt-4">
-                  <TranscriptionProgress
-                    progress={transcriptionProgress}
-                    onCancel={cancelTranscription}
-                  />
-                </div>
-              )}
-
               {/* Fallback processing indicator */}
               {isProcessing && !isTranscribing && (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -249,6 +270,39 @@ export default function HomePage() {
                       Size: {(currentVideo.size / 1024 / 1024).toFixed(1)} MB
                     </span>
                   </div>
+
+                  {/* Subtitle Processing Section */}
+                  {!currentVideo.processed && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">
+                        Subtitle Processing
+                      </h4>
+                      <SubtitleProcessor
+                        videoId={currentVideo.id}
+                        language={currentVideo.language}
+                        onSubtitlesLoaded={handleSubtitlesLoaded}
+                        onAutoTranscribe={handleAutoTranscribe}
+                        isTranscribing={isTranscribing}
+                      />
+                    </div>
+                  )}
+
+                  {/* Transcription Progress */}
+                  {(isTranscribing || transcriptionProgress) && (
+                    <div className="mt-4">
+                      <TranscriptionProgress
+                        progress={transcriptionProgress}
+                        onCancel={cancelTranscription}
+                      />
+                    </div>
+                  )}
+                </div>
+                {/* Learning Panel - Below Video */}
+                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  <LearningPanel
+                    onPlaySegment={handlePlaySegment}
+                    onAddToVocabulary={handleAddToVocabulary}
+                  />
                 </div>
               </div>
 
@@ -256,7 +310,7 @@ export default function HomePage() {
               <div className="col-span-1 md:col-span-4">
                 <div
                   className="bg-white rounded-lg shadow-sm overflow-hidden"
-                  style={{ height: "550px" }}
+                  style={{ height: "1200px" }}
                 >
                   <SubtitleList
                     onSubtitleClick={(subtitle) => setCurrentSubtitle(subtitle)}
@@ -264,14 +318,6 @@ export default function HomePage() {
                   />
                 </div>
               </div>
-            </div>
-
-            {/* Learning Panel - Below Video */}
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <LearningPanel
-                onPlaySegment={handlePlaySegment}
-                onAddToVocabulary={handleAddToVocabulary}
-              />
             </div>
           </div>
         )}

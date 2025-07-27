@@ -10,12 +10,15 @@ import { SubtitleProcessor } from "@/components/subtitle-processor";
 import { useAppStore } from "@/lib/store";
 import { StorageManager } from "@/lib/storage";
 import { assemblyAIService } from "@/lib/assemblyai-service";
+import { subtitleStorage, SubtitleRecord } from "@/lib/subtitle-storage";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { Video } from "@/types/video";
 import { Subtitle } from "@/types/subtitle";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Settings } from "lucide-react";
+import { BookOpen, Settings, Download } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
+import { SubtitleDetectionDialog } from "@/components/subtitle-detection-dialog";
 
 export default function HomePage() {
   const { currentVideo, setCurrentVideo, setSubtitles, setCurrentSubtitle } =
@@ -27,6 +30,11 @@ export default function HomePage() {
   const [videoPlayerRef, setVideoPlayerRef] = useState<VideoPlayerRef | null>(
     null
   );
+  const [detectedRecord, setDetectedRecord] = useState<SubtitleRecord | null>(
+    null
+  );
+  const [isDetectionDialogOpen, setIsDetectionDialogOpen] = useState(false);
+  const [isExactMatch, setIsExactMatch] = useState(false);
 
   const handleFileSelect = async (file: File, language: string) => {
     setIsProcessing(true);
@@ -62,6 +70,9 @@ export default function HomePage() {
 
       // Store the file for later transcription
       setCurrentVideo({ ...video, file });
+
+      // Check for existing subtitle records
+      await checkForExistingSubtitles(video);
     } catch (error) {
       console.error("Error processing video:", error);
       // If processing fails, still show the video but without subtitles
@@ -71,6 +82,60 @@ export default function HomePage() {
       }
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // Check for existing subtitle records
+  const checkForExistingSubtitles = async (video: Video) => {
+    try {
+      // Check for exact video match first
+      const existingRecord = await subtitleStorage.getSubtitleRecordByVideoId(
+        video.id
+      );
+
+      if (existingRecord) {
+        // Found exact match, show dialog
+        setDetectedRecord(existingRecord);
+        setIsExactMatch(true);
+        setIsDetectionDialogOpen(true);
+        return;
+      }
+
+      // Check for similar video (same hash)
+      const similarRecord = await subtitleStorage.hasSimilarVideoRecord(video);
+
+      if (similarRecord) {
+        // Found similar video, show dialog
+        setDetectedRecord(similarRecord);
+        setIsExactMatch(false);
+        setIsDetectionDialogOpen(true);
+      }
+    } catch (error) {
+      console.error("Error checking for existing subtitles:", error);
+    }
+  };
+
+  // Handle loading subtitles from detected record
+  const handleLoadDetectedSubtitles = async () => {
+    if (!detectedRecord || !currentVideo) return;
+
+    try {
+      setSubtitles(detectedRecord.subtitles);
+      setCurrentVideo({ ...currentVideo, processed: true });
+
+      // If it's not an exact match, update the video ID
+      if (!isExactMatch) {
+        await subtitleStorage.updateVideoId(detectedRecord.id, currentVideo.id);
+      }
+
+      toast.success(
+        isExactMatch
+          ? "Loaded existing subtitles"
+          : "Linked existing subtitles to current video"
+      );
+    } catch (error) {
+      console.error("Error loading subtitles:", error);
+      toast.error("Failed to load subtitles");
     }
   };
 
@@ -139,6 +204,11 @@ export default function HomePage() {
 
       // Set subtitles in store
       setSubtitles(subtitles);
+
+      // 提示用户保存字幕到本地数据库
+      console.log(
+        "Subtitles loaded, you can click the save button to save them to local database"
+      );
     } catch (error) {
       console.error("Error saving subtitles:", error);
     }
@@ -202,6 +272,12 @@ export default function HomePage() {
                 <Button variant="outline" size="sm">
                   <BookOpen className="w-4 h-4 mr-2" />
                   Vocabulary
+                </Button>
+              </Link>
+              <Link href="/subtitles">
+                <Button variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Subtitles
                 </Button>
               </Link>
               <Link href="/settings">
@@ -353,6 +429,20 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Subtitle Detection Dialog */}
+        {detectedRecord && (
+          <SubtitleDetectionDialog
+            isOpen={isDetectionDialogOpen}
+            onClose={() => {
+              setIsDetectionDialogOpen(false);
+              setDetectedRecord(null);
+            }}
+            onLoadSubtitles={handleLoadDetectedSubtitles}
+            record={detectedRecord}
+            isExactMatch={isExactMatch}
+          />
         )}
       </main>
     </div>

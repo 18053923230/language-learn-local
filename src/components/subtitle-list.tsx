@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Play, Volume2, Edit, Download, Settings } from "lucide-react";
 import { SubtitleEditor } from "./subtitle-editor";
 import { SubtitleExporter } from "@/lib/subtitle-export";
+import { SubtitleSaveButton } from "./subtitle-save-button";
 
 interface SubtitleListProps {
   onSubtitleClick?: (subtitle: Subtitle) => void;
@@ -17,8 +18,13 @@ export function SubtitleList({
   onSubtitleClick,
   onPlaySegment,
 }: SubtitleListProps) {
-  const { subtitles, currentSubtitle, playerState, setSubtitles } =
-    useAppStore();
+  const {
+    subtitles,
+    currentSubtitle,
+    playerState,
+    setSubtitles,
+    currentVideo,
+  } = useAppStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredSubtitles, setFilteredSubtitles] = useState<Subtitle[]>([]);
   const [editingSubtitle, setEditingSubtitle] = useState<Subtitle | null>(null);
@@ -81,6 +87,16 @@ export function SubtitleList({
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Subtitles</h3>
           <div className="flex items-center space-x-2">
+            {currentVideo && subtitles.length > 0 && (
+              <SubtitleSaveButton
+                video={currentVideo}
+                subtitles={subtitles}
+                source="assemblyai"
+                onSaved={() => {
+                  // 可以在这里添加保存后的回调逻辑
+                }}
+              />
+            )}
             <Button
               variant="outline"
               size="sm"

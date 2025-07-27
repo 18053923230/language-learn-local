@@ -3,28 +3,40 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Trash2,
   Download,
-  Eye,
   Search,
   ArrowLeft,
   FileText,
+  Database,
+  Eye,
+  Trash2,
 } from "lucide-react";
 import { subtitleStorage, SubtitleRecord } from "@/lib/subtitle-storage";
+import { rawTranscriptionStorage } from "@/lib/raw-transcription-storage";
+import { RawTranscriptionData } from "@/types/raw-transcription";
 import { SubtitleExporter } from "@/lib/subtitle-export";
 import { toast } from "sonner";
 import Link from "next/link";
 
 export default function SubtitlesPage() {
   const [records, setRecords] = useState<SubtitleRecord[]>([]);
+  const [rawData, setRawData] = useState<RawTranscriptionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredRecords, setFilteredRecords] = useState<SubtitleRecord[]>([]);
+  const [activeTab, setActiveTab] = useState<"subtitles" | "raw-data">(
+    "subtitles"
+  );
   const [stats, setStats] = useState<{
     totalRecords: number;
     totalSize: number;
     languages: string[];
     sources: { [key: string]: number };
+  } | null>(null);
+  const [rawStats, setRawStats] = useState<{
+    totalRecords: number;
+    totalSize: number;
+    averageConfidence: number;
   } | null>(null);
 
   useEffect(() => {
@@ -49,15 +61,25 @@ export default function SubtitlesPage() {
       setLoading(true);
       const allRecords = await subtitleStorage.getAllSubtitleRecords();
       const storageStats = await subtitleStorage.getStorageStats();
+      const allRawData = await rawTranscriptionStorage.getAllRawData();
+      const rawStorageStats = await rawTranscriptionStorage.getStorageStats();
 
       setRecords(allRecords);
       setStats(storageStats);
+      setRawData(allRawData);
+      setRawStats(rawStorageStats);
     } catch (error) {
       console.error("Error loading records:", error);
-      toast.error("Failed to load subtitle records");
+      toast.error("Failed to load records");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewRawData = (rawData: RawTranscriptionData) => {
+    // 可以在这里添加查看原始数据的逻辑
+    console.log("Raw data:", rawData);
+    toast.info(`Viewing raw data for ${rawData.videoId}`);
   };
 
   const handleDeleteRecord = async (recordId: string) => {
@@ -161,13 +183,40 @@ export default function SubtitlesPage() {
               Manage Your Subtitle Library
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              View, search, export, and manage all your saved subtitle records.
-              Your learning progress is automatically saved and organized.
+              View, search, export, and manage all your saved subtitle records
+              and raw transcription data. Your learning progress is
+              automatically saved and organized.
             </p>
           </div>
 
+          {/* Tab Navigation */}
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab("subtitles")}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "subtitles"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <FileText className="w-4 h-4 inline mr-2" />
+              Subtitles
+            </button>
+            <button
+              onClick={() => setActiveTab("raw-data")}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "raw-data"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              <Database className="w-4 h-4 inline mr-2" />
+              Raw Data
+            </button>
+          </div>
+
           {/* Statistics Cards */}
-          {stats && (
+          {activeTab === "subtitles" && stats && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="education-card p-6 text-center">
                 <div className="text-3xl font-bold text-blue-600 mb-2">
@@ -207,13 +256,46 @@ export default function SubtitlesPage() {
             </div>
           )}
 
+          {activeTab === "raw-data" && rawStats && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="education-card p-6 text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-2">
+                  {rawStats.totalRecords}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Raw Records
+                </div>
+              </div>
+              <div className="education-card p-6 text-center">
+                <div className="text-3xl font-bold text-green-600 mb-2">
+                  {formatFileSize(rawStats.totalSize)}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Total Size
+                </div>
+              </div>
+              <div className="education-card p-6 text-center">
+                <div className="text-3xl font-bold text-purple-600 mb-2">
+                  {(rawStats.averageConfidence * 100).toFixed(1)}%
+                </div>
+                <div className="text-sm text-gray-600 font-medium">
+                  Avg Confidence
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Search Bar */}
           <div className="education-card p-6">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search video name or language..."
+                placeholder={
+                  activeTab === "subtitles"
+                    ? "Search video name or language..."
+                    : "Search video ID or language..."
+                }
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="education-input w-full pl-12 pr-4 py-4 text-lg"
@@ -226,20 +308,138 @@ export default function SubtitlesPage() {
             {loading ? (
               <div className="p-12 text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading subtitle records...</p>
+                <p className="text-gray-600">Loading records...</p>
               </div>
-            ) : filteredRecords.length === 0 ? (
+            ) : activeTab === "subtitles" ? (
+              filteredRecords.length === 0 ? (
+                <div className="p-12 text-center">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    No Subtitle Records
+                  </h3>
+                  <p className="text-gray-600 max-w-sm mx-auto">
+                    {searchTerm
+                      ? "No matching records found"
+                      : "Upload videos and generate subtitles to view and manage them here"}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Video Name
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Language
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Duration
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Subtitles
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Confidence
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Source
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Created
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredRecords.map((record) => (
+                        <tr
+                          key={record.id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                              {record.videoName}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="education-badge education-badge-info">
+                              {record.language}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {formatDuration(record.duration)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {record.subtitles.length} segments
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`education-badge ${
+                                record.confidence > 0.8
+                                  ? "education-badge-success"
+                                  : record.confidence > 0.6
+                                  ? "education-badge-warning"
+                                  : "education-badge-error"
+                              }`}
+                            >
+                              {Math.round(record.confidence * 100)}%
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="education-badge education-badge-info">
+                              {getSourceLabel(record.source)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {formatDate(record.createdAt)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  handleExportRecord(record, "srt")
+                                }
+                                className="h-8 w-8 p-0 hover:bg-green-100 text-green-600"
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteRecord(record.id)}
+                                className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : // Raw Data Tab
+            rawData.length === 0 ? (
               <div className="p-12 text-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-8 h-8 text-gray-400" />
+                  <Database className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No Subtitle Records
+                  No Raw Transcription Data
                 </h3>
                 <p className="text-gray-600 max-w-sm mx-auto">
                   {searchTerm
                     ? "No matching records found"
-                    : "Upload videos and generate subtitles to view and manage them here"}
+                    : "Upload audio files to generate raw transcription data"}
                 </p>
               </div>
             ) : (
@@ -248,22 +448,22 @@ export default function SubtitlesPage() {
                   <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Video Name
+                        Video ID
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Language
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Duration
+                        Words
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Subtitles
+                        Utterances
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Confidence
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Source
+                        Duration
                       </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Created
@@ -274,70 +474,74 @@ export default function SubtitlesPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredRecords.map((record) => (
-                      <tr
-                        key={record.id}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
-                            {record.videoName}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="education-badge education-badge-info">
-                            {record.language}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {formatDuration(record.duration)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {record.subtitles.length} segments
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`education-badge ${
-                              record.confidence > 0.8
-                                ? "education-badge-success"
-                                : record.confidence > 0.6
-                                ? "education-badge-warning"
-                                : "education-badge-error"
-                            }`}
-                          >
-                            {Math.round(record.confidence * 100)}%
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="education-badge education-badge-info">
-                            {getSourceLabel(record.source)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {formatDate(record.createdAt)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleExportRecord(record, "srt")}
-                              className="h-8 w-8 p-0 hover:bg-green-100 text-green-600"
+                    {rawData
+                      .filter((data) =>
+                        searchTerm
+                          ? data.videoId
+                              .toLowerCase()
+                              .includes(searchTerm.toLowerCase()) ||
+                            data.language
+                              .toLowerCase()
+                              .includes(searchTerm.toLowerCase())
+                          : true
+                      )
+                      .map((data) => (
+                        <tr
+                          key={data.id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                              {data.videoId}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="education-badge education-badge-info">
+                              {data.language}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {data.metadata.totalWords}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {data.metadata.totalUtterances}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`education-badge ${
+                                data.metadata.averageConfidence > 0.8
+                                  ? "education-badge-success"
+                                  : data.metadata.averageConfidence > 0.6
+                                  ? "education-badge-warning"
+                                  : "education-badge-error"
+                              }`}
                             >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteRecord(record.id)}
-                              className="h-8 w-8 p-0 hover:bg-red-100 text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              {(data.metadata.averageConfidence * 100).toFixed(
+                                1
+                              )}
+                              %
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {data.metadata.audioDuration.toFixed(1)}s
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {formatDate(data.createdAt)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewRawData(data)}
+                                className="h-8 w-8 p-0 hover:bg-blue-100 text-blue-600"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>

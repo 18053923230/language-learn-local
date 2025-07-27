@@ -1,10 +1,13 @@
 import { Subtitle } from "@/types/subtitle";
 
+import { RawTranscriptionData } from "@/types/raw-transcription";
+
 export interface AssemblyAIResult {
   segments: Subtitle[];
   language: string;
   duration: number;
   confidence: number;
+  rawData?: RawTranscriptionData;
 }
 
 export interface ProcessingProgress {
@@ -111,11 +114,19 @@ export class AssemblyAIService {
         message: "Transcription completed successfully",
       });
 
+      // Convert raw data to subtitles
+      const segments = this.convertToSubtitles(
+        result.rawData.assemblyData,
+        result.rawData.videoId,
+        result.rawData.language
+      );
+
       return {
-        segments: result.segments,
-        language: result.language,
-        duration: result.duration,
-        confidence: result.confidence,
+        segments,
+        language: result.rawData.language,
+        duration: result.rawData.metadata.audioDuration,
+        confidence: result.rawData.metadata.averageConfidence,
+        rawData: result.rawData,
       };
     } catch (error) {
       console.error("AssemblyAI transcription error:", error);

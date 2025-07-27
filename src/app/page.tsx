@@ -11,6 +11,7 @@ import { useAppStore } from "@/lib/store";
 import { StorageManager } from "@/lib/storage";
 import { assemblyAIService } from "@/lib/assemblyai-service";
 import { subtitleStorage, SubtitleRecord } from "@/lib/subtitle-storage";
+import { rawTranscriptionStorage } from "@/lib/raw-transcription-storage";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { Video } from "@/types/video";
 import { Subtitle } from "@/types/subtitle";
@@ -234,6 +235,17 @@ export default function HomePage() {
           console.log("AssemblyAI transcription progress:", progress);
         }
       );
+
+      // Save raw transcription data
+      if (result.rawData) {
+        try {
+          await rawTranscriptionStorage.saveRawData(result.rawData);
+          console.log("Raw transcription data saved successfully");
+        } catch (error) {
+          console.error("Error saving raw data:", error);
+          // Continue with subtitle processing even if raw data save fails
+        }
+      }
 
       // Save subtitles to local storage
       await StorageManager.saveSubtitles(result.segments);

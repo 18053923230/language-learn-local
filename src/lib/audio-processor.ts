@@ -56,8 +56,8 @@ export class AudioProcessor {
 
     const {
       format = "wav",
-      sampleRate = 16000,
-      channels = 1,
+      sampleRate = 44100, // Use higher sample rate for better quality
+      channels = 2, // Use stereo for better compatibility
       quality = 5,
     } = options;
 

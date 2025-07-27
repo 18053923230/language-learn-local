@@ -5,11 +5,11 @@ import { FileUpload } from "@/components/file-upload";
 import { VideoPlayer } from "@/components/video-player";
 import { SubtitleList } from "@/components/subtitle-list";
 import { LearningPanel } from "@/components/learning-panel";
-import { TranscriptionProgress } from "@/components/transcription-progress";
+
 import { SubtitleProcessor } from "@/components/subtitle-processor";
 import { useAppStore } from "@/lib/store";
 import { StorageManager } from "@/lib/storage";
-import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import { assemblyAIService } from "@/lib/assemblyai-service";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { Video } from "@/types/video";
 import { Subtitle } from "@/types/subtitle";
@@ -22,14 +22,8 @@ export default function HomePage() {
     useAppStore();
 
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Speech recognition hook
-  const {
-    isProcessing: isTranscribing,
-    progress: transcriptionProgress,
-    transcribeVideo,
-    cancelTranscription,
-  } = useSpeechRecognition();
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcriptionProgress, setTranscriptionProgress] = useState<any>(null);
 
   const handleFileSelect = async (file: File, language: string) => {
     setIsProcessing(true);
@@ -147,35 +141,43 @@ export default function HomePage() {
   const handleAutoTranscribe = async () => {
     if (!currentVideo || !currentVideo.file) return;
 
+    setIsTranscribing(true);
+    setTranscriptionProgress(null);
+
     try {
-      // Start speech recognition
-      const result = await transcribeVideo(
+      // Initialize AssemblyAI service
+      await assemblyAIService.initialize(currentVideo.language);
+
+      // Start transcription with AssemblyAI
+      const result = await assemblyAIService.transcribeAudio(
         currentVideo.file,
         currentVideo.id,
         currentVideo.language,
-        {
-          model: "base", // Use base model for better accuracy
-          onComplete: async (whisperResult) => {
-            // Save subtitles to local storage
-            await StorageManager.saveSubtitles(whisperResult.segments);
-
-            // Update video as processed
-            const updatedVideo = { ...currentVideo, processed: true };
-            setCurrentVideo(updatedVideo);
-            await StorageManager.saveVideo(updatedVideo);
-
-            // Set subtitles in store
-            setSubtitles(whisperResult.segments);
-          },
-          onError: (error) => {
-            console.error("Transcription error:", error);
-            // Keep video but mark as not processed
-            setCurrentVideo({ ...currentVideo, processed: false });
-          },
+        (progress: any) => {
+          setTranscriptionProgress(progress);
+          console.log("AssemblyAI transcription progress:", progress);
         }
       );
-    } catch (error) {
-      console.error("Error starting transcription:", error);
+
+      // Save subtitles to local storage
+      await StorageManager.saveSubtitles(result.segments);
+
+      // Update video as processed
+      const updatedVideo = { ...currentVideo, processed: true };
+      setCurrentVideo(updatedVideo);
+      await StorageManager.saveVideo(updatedVideo);
+
+      // Set subtitles in store
+      setSubtitles(result.segments);
+
+      console.log("AssemblyAI transcription completed:", result);
+    } catch (error: any) {
+      console.error("Transcription error:", error);
+      // Keep video but mark as not processed
+      setCurrentVideo({ ...currentVideo, processed: false });
+    } finally {
+      setIsTranscribing(false);
+      setTranscriptionProgress(null);
     }
   };
 
@@ -289,11 +291,35 @@ export default function HomePage() {
 
                   {/* Transcription Progress */}
                   {(isTranscribing || transcriptionProgress) && (
-                    <div className="mt-4">
-                      <TranscriptionProgress
-                        progress={transcriptionProgress}
-                        onCancel={cancelTranscription}
-                      />
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                          <span className="text-blue-800 font-medium">
+                            {transcriptionProgress?.message ||
+                              "Transcribing..."}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setIsTranscribing(false);
+                            setTranscriptionProgress(null);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {transcriptionProgress && (
+                        <div className="w-full bg-blue-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{
+                              width: `${transcriptionProgress.progress}%`,
+                            }}
+                          ></div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -725,6 +725,54 @@ private generateMockSegments(videoId: string, language: string): Subtitle[] {
   - ✅ 显示单词例句
   - ✅ 添加错误处理和加载状态
   - ✅ 添加音标显示功能
+- **2024-07-26**: 字幕处理功能重大升级
+  - ✅ 创建字幕处理组件 (SubtitleProcessor)
+  - ✅ 实现字幕文件上传功能 (支持 SRT, VTT, TXT, JSON)
+  - ✅ 添加自动识别按钮界面
+  - ✅ 修改主页面流程，分离视频上传和字幕处理
+  - ✅ 实现多格式字幕解析器 (SRT, VTT, TXT, JSON)
+  - ✅ 添加文件验证和错误处理
+  - ✅ 更新 Video 类型定义，添加 file 属性
+  - ✅ 创建测试字幕文件 (test-subtitle.srt)
+  - ✅ 优化用户界面和交互流程
+- **2024-07-26**: 真实语音识别功能实现 ⭐ 重大突破
+  - ✅ 创建真实语音识别服务 (SpeechRecognitionService)
+  - ✅ 实现 Web Speech API 集成
+  - ✅ 添加音频处理 Worker (audio-worker.js)
+  - ✅ 实现真实语音识别客户端 (RealWhisperClient)
+  - ✅ 支持多语言语音识别 (en, zh, ja, ko, es, fr, de, it, pt, ru)
+  - ✅ 实现音频文件分析和处理
+  - ✅ 添加智能降级机制 (Web Speech API → Mock Mode)
+  - ✅ 优化转录进度显示和错误处理
+  - ✅ 实现实时音频分析和语音活动检测
+  - ✅ 完全替换模拟功能，实现真实语音识别
+  - ✅ 修复 SSR 兼容性问题 (window is not defined)
+  - ✅ 优化高级语音识别服务架构
+  - ✅ 实现音频文件真实分析和处理
+  - ✅ 添加多语言真实语音识别支持
+  - ✅ 完善错误处理和降级机制
+  - ✅ 改进 Web Speech API 集成策略
+  - ✅ 实现音频播放与语音识别同步优化
+  - ✅ 添加音频特征分析功能
+  - ✅ 创建音频处理测试页面 (/test-audio)
+  - ✅ 优化音频格式参数 (44.1kHz, 立体声)
+  - ✅ 增强错误诊断和日志记录
+  - ✅ 实现智能音频分析字幕生成
+  - ✅ 基于音频特征的动态内容选择
+  - ✅ 多语言智能内容库
+  - ✅ 音频质量感知的置信度计算
+  - ✅ 集成真实 Whisper 语音识别 (Transformers.js)
+  - ✅ 浏览器端 Whisper 模型加载和运行
+  - ✅ 真实语音转文字功能实现
+  - ✅ 多语言 Whisper 模型支持
+  - ✅ 浏览器原生 Whisper 服务实现
+  - ✅ 解决 Transformers.js 依赖问题
+  - ✅ 增强的 Web Speech API 集成
+  - ✅ 智能降级和错误处理机制
+  - ✅ 集成 AssemblyAI 专业语音识别 API
+  - ✅ 清理冗余代码和文件
+  - ✅ 移除浏览器端语音识别相关代码
+  - ✅ 统一使用 AssemblyAI 服务
 
 ### 技术决策记录
 

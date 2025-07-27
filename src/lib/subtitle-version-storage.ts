@@ -1,6 +1,8 @@
 import Dexie, { Table } from "dexie";
 import { SubtitleVersion } from "@/types/subtitle-version";
 import { Subtitle } from "@/types/subtitle";
+import { RawTranscriptionData } from "@/types/raw-transcription";
+import { defaultSubtitleGenerator } from "@/lib/subtitle-generator";
 
 class SubtitleVersionDatabase extends Dexie {
   subtitleVersions!: Table<SubtitleVersion>;
@@ -74,6 +76,46 @@ export class SubtitleVersionStorage {
             ? subtitles.reduce((sum, s) => sum + s.text.length, 0) /
               subtitles.length
             : 0,
+      },
+    };
+
+    await this.saveVersion(version);
+    return version;
+  }
+
+  /**
+   * 从原始数据自动生成智能分段字幕版本
+   */
+  async createSmartVersionFromRawData(
+    videoId: string,
+    rawData: RawTranscriptionData
+  ): Promise<SubtitleVersion> {
+    // 使用字幕生成器生成智能分段字幕
+    const subtitles = defaultSubtitleGenerator.generateFromRawData(rawData);
+    const stats = defaultSubtitleGenerator.getGenerationStats(rawData);
+
+    const version: SubtitleVersion = {
+      id: `smart-${videoId}-${Date.now()}`,
+      videoId,
+      versionName: "智能分段字幕",
+      versionType: "optimized",
+      subtitles,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      description: "基于句末标点智能分段的字幕，适合正常观看和学习",
+      confidence: stats.averageConfidence,
+      source: "optimized",
+      isDefault: false,
+      metadata: {
+        totalSegments: stats.totalSegments,
+        totalDuration: stats.totalDuration,
+        averageSegmentLength: stats.averageSegmentLength,
+        optimizationParams: {
+          method: "sentence-end-punctuation",
+          punctuation: [".", "!", "?"],
+          minDuration: 0.1,
+          maxDuration: 60.0,
+        },
       },
     };
 

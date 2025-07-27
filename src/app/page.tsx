@@ -12,14 +12,17 @@ import { StorageManager } from "@/lib/storage";
 import { assemblyAIService } from "@/lib/assemblyai-service";
 import { subtitleStorage, SubtitleRecord } from "@/lib/subtitle-storage";
 import { rawTranscriptionStorage } from "@/lib/raw-transcription-storage";
+import { subtitleVersionStorage } from "@/lib/subtitle-version-storage";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { Video } from "@/types/video";
 import { Subtitle } from "@/types/subtitle";
+import { SubtitleVersion } from "@/types/subtitle-version";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Settings, Download } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { SubtitleDetectionDialog } from "@/components/subtitle-detection-dialog";
+import { SubtitleVersionDialog } from "@/components/subtitle-version-dialog";
 
 export default function HomePage() {
   const { currentVideo, setCurrentVideo, setSubtitles, setCurrentSubtitle } =
@@ -36,14 +39,23 @@ export default function HomePage() {
   );
   const [isDetectionDialogOpen, setIsDetectionDialogOpen] = useState(false);
   const [isExactMatch, setIsExactMatch] = useState(false);
+  const [hasRawData, setHasRawData] = useState(false);
+  const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
+  const [availableVersions, setAvailableVersions] = useState<SubtitleVersion[]>(
+    []
+  );
+  const [currentVersion, setCurrentVersion] = useState<SubtitleVersion | null>(
+    null
+  );
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
 
   const handleFileSelect = async (file: File, language: string) => {
     setIsProcessing(true);
 
     try {
-      // Create video object
+      // Create video object with consistent ID format
       const video: Video = {
-        id: Date.now().toString(),
+        id: `api-transcript-${Date.now()}`,
         name: file.name,
         url: URL.createObjectURL(file),
         duration: 0, // Will be set when video loads
@@ -72,8 +84,32 @@ export default function HomePage() {
       // Store the file for later transcription
       setCurrentVideo({ ...video, file });
 
-      // Check for existing subtitle records
+      // Check for existing subtitle records and raw data
       await checkForExistingSubtitles(video);
+      await checkForExistingRawData(video);
+
+      // 检查是否有现有字幕版本
+      const hasExistingVersions = await checkForExistingVersions(video);
+
+      // 如果有原始数据但没有字幕版本，自动生成智能分段字幕
+      if (hasRawData && !hasExistingVersions) {
+        console.log(
+          "Raw data exists but no subtitle versions found, auto generating..."
+        );
+        console.log("Video info:", {
+          id: video.id,
+          name: video.name,
+          size: video.size,
+          language: video.language,
+        });
+        await autoGenerateSmartSubtitle(video);
+      } else {
+        console.log("Auto generation conditions not met:", {
+          hasRawData,
+          hasExistingVersions,
+          videoId: video.id,
+        });
+      }
     } catch (error) {
       console.error("Error processing video:", error);
       // If processing fails, still show the video but without subtitles
@@ -116,6 +152,84 @@ export default function HomePage() {
     }
   };
 
+  // Check for existing raw data
+  const checkForExistingRawData = async (video: Video) => {
+    try {
+      // Check for exact video match first
+      const existingRawData = await rawTranscriptionStorage.getRawData(
+        video.id
+      );
+
+      if (existingRawData) {
+        setHasRawData(true);
+        console.log("Found existing raw data for video:", video.id);
+        return;
+      }
+
+      // Check all raw data for similar videos (by file name and size)
+      const allRawData = await rawTranscriptionStorage.getAllRawData();
+
+      const similarRawData = allRawData.find((rawData) => {
+        // 基于文件名和大小的精确匹配
+        return (
+          rawData.metadata.fileName === video.name &&
+          rawData.metadata.fileSize === video.size &&
+          rawData.language === video.language
+        );
+      });
+
+      if (similarRawData) {
+        setHasRawData(true);
+        console.log(
+          "Found similar raw data for video:",
+          video.id,
+          "matching:",
+          similarRawData.videoId
+        );
+        return;
+      }
+
+      // If no raw data found, ensure the state is false
+      setHasRawData(false);
+    } catch (error) {
+      console.error("Error checking for existing raw data:", error);
+      setHasRawData(false);
+    }
+  };
+
+  // Check for existing subtitle versions
+  const checkForExistingVersions = async (video: Video) => {
+    try {
+      const versions = await subtitleVersionStorage.getVersionsByVideoId(
+        video.id
+      );
+
+      if (versions.length > 0) {
+        setAvailableVersions(versions);
+
+        // 找到默认版本或第一个版本
+        const defaultVersion = versions.find((v) => v.isDefault) || versions[0];
+        setCurrentVersion(defaultVersion);
+
+        // 如果有多个版本，显示选择对话框
+        if (versions.length > 1) {
+          setIsVersionDialogOpen(true);
+        } else {
+          // 只有一个版本，直接加载
+          setSubtitles(defaultVersion.subtitles);
+        }
+
+        console.log("Found existing subtitle versions for video:", video.id);
+        return true; // 表示找到了现有版本
+      }
+
+      return false; // 表示没有找到现有版本
+    } catch (error) {
+      console.error("Error checking for existing versions:", error);
+      return false;
+    }
+  };
+
   // Handle loading subtitles from detected record
   const handleLoadDetectedSubtitles = async () => {
     if (!detectedRecord || !currentVideo) return;
@@ -129,6 +243,18 @@ export default function HomePage() {
         await subtitleStorage.updateVideoId(detectedRecord.id, currentVideo.id);
       }
 
+      // Check if this video has raw data
+      await checkForExistingRawData(currentVideo);
+
+      // 检查是否有现有字幕版本，如果没有但有原始数据，自动生成
+      const hasExistingVersions = await checkForExistingVersions(currentVideo);
+      if (hasRawData && !hasExistingVersions) {
+        console.log(
+          "Raw data exists but no subtitle versions found, auto generating..."
+        );
+        await autoGenerateSmartSubtitle(currentVideo);
+      }
+
       toast.success(
         isExactMatch
           ? "Loaded existing subtitles"
@@ -137,6 +263,64 @@ export default function HomePage() {
     } catch (error) {
       console.error("Error loading subtitles:", error);
       toast.error("Failed to load subtitles");
+    }
+  };
+
+  // Handle subtitle version selection
+  const handleSelectSubtitleVersion = (version: SubtitleVersion) => {
+    setCurrentVersion(version);
+    setSubtitles(version.subtitles);
+    setIsVersionDialogOpen(false);
+
+    toast.success(`已切换到: ${version.versionName}`);
+  };
+
+  // Auto generate smart subtitle version from raw data
+  const autoGenerateSmartSubtitle = async (video: Video) => {
+    setIsAutoGenerating(true);
+    try {
+      // 获取原始数据
+      const rawData = await rawTranscriptionStorage.getRawData(video.id);
+
+      if (!rawData) {
+        console.warn("No raw data found for auto generation");
+        return false;
+      }
+
+      // 生成智能分段字幕版本
+      const smartVersion =
+        await subtitleVersionStorage.createSmartVersionFromRawData(
+          video.id,
+          rawData
+        );
+
+      // 保存到本地存储
+      await StorageManager.saveSubtitles(smartVersion.subtitles);
+
+      // 同时保存到字幕记录存储
+      await subtitleStorage.saveSubtitleRecord(
+        video,
+        smartVersion.subtitles,
+        "assemblyai"
+      );
+
+      // 设置为当前版本和字幕
+      setCurrentVersion(smartVersion);
+      setSubtitles(smartVersion.subtitles);
+      setAvailableVersions([smartVersion]);
+
+      toast.success(
+        `已自动生成智能分段字幕！共 ${smartVersion.subtitles.length} 个段落`
+      );
+
+      console.log("Auto generated smart subtitle version:", smartVersion);
+      return true;
+    } catch (error) {
+      console.error("Error auto generating smart subtitle:", error);
+      toast.error("自动生成智能分段字幕失败");
+      return false;
+    } finally {
+      setIsAutoGenerating(false);
     }
   };
 
@@ -241,22 +425,53 @@ export default function HomePage() {
         try {
           await rawTranscriptionStorage.saveRawData(result.rawData);
           console.log("Raw transcription data saved successfully");
+          setHasRawData(true); // Update state after successful save
+
+          // 自动生成智能分段字幕版本
+          try {
+            const smartVersion =
+              await subtitleVersionStorage.createSmartVersionFromRawData(
+                result.rawData.videoId,
+                result.rawData
+              );
+            console.log("Smart subtitle version created:", smartVersion);
+
+            // 使用智能分段字幕作为默认显示
+            setSubtitles(smartVersion.subtitles);
+
+            // 保存到本地存储
+            await StorageManager.saveSubtitles(smartVersion.subtitles);
+
+            // 同时保存到字幕记录存储
+            await subtitleStorage.saveSubtitleRecord(
+              currentVideo,
+              smartVersion.subtitles,
+              "assemblyai"
+            );
+
+            toast.success("智能分段字幕生成成功！");
+          } catch (versionError) {
+            console.error("Error creating smart version:", versionError);
+            // 如果智能版本创建失败，使用原始字幕
+            setSubtitles(result.segments);
+            await StorageManager.saveSubtitles(result.segments);
+          }
         } catch (error) {
           console.error("Error saving raw data:", error);
           // Continue with subtitle processing even if raw data save fails
+          setSubtitles(result.segments);
+          await StorageManager.saveSubtitles(result.segments);
         }
+      } else {
+        // 如果没有原始数据，使用原始字幕
+        setSubtitles(result.segments);
+        await StorageManager.saveSubtitles(result.segments);
       }
-
-      // Save subtitles to local storage
-      await StorageManager.saveSubtitles(result.segments);
 
       // Update video as processed
       const updatedVideo = { ...currentVideo, processed: true };
       setCurrentVideo(updatedVideo);
       await StorageManager.saveVideo(updatedVideo);
-
-      // Set subtitles in store
-      setSubtitles(result.segments);
 
       console.log("AssemblyAI transcription completed:", result);
     } catch (error: any) {
@@ -383,6 +598,46 @@ export default function HomePage() {
                     </span>
                   </div>
 
+                  {/* Raw Data Status */}
+                  {hasRawData && (
+                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-blue-600 text-xs font-bold">
+                            ✓
+                          </span>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-blue-800">
+                            原始数据已存在
+                          </h4>
+                          <p className="text-xs text-blue-600 mt-1">
+                            此视频的原始转录数据已保存在本地，无需重复转录
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Auto Generation Progress */}
+                  {isAutoGenerating && (
+                    <div className="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-purple-800">
+                            正在自动生成智能分段字幕
+                          </h4>
+                          <p className="text-xs text-purple-600 mt-1">
+                            基于原始数据生成基于句末标点的智能分段字幕
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Subtitle Processing Section */}
                   {!currentVideo.processed && (
                     <div className="mt-6 pt-6 border-t border-gray-200">
@@ -400,6 +655,7 @@ export default function HomePage() {
                         onSubtitlesLoaded={handleSubtitlesLoaded}
                         onAutoTranscribe={handleAutoTranscribe}
                         isTranscribing={isTranscribing}
+                        hasRawData={hasRawData}
                       />
                     </div>
                   )}
@@ -476,6 +732,16 @@ export default function HomePage() {
             isExactMatch={isExactMatch}
           />
         )}
+
+        {/* Subtitle Version Dialog */}
+        <SubtitleVersionDialog
+          isOpen={isVersionDialogOpen}
+          onClose={() => setIsVersionDialogOpen(false)}
+          versions={availableVersions}
+          currentVersion={currentVersion || undefined}
+          onSelectVersion={handleSelectSubtitleVersion}
+          videoName={currentVideo?.name || ""}
+        />
       </main>
     </div>
   );

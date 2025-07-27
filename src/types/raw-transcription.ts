@@ -28,6 +28,8 @@ export interface RawTranscriptionData {
     processingTime: number;
     modelVersion: string;
     audioDuration: number;
+    fileName?: string;
+    fileSize?: number;
   };
 }
 

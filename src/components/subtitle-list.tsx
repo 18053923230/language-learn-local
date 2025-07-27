@@ -12,12 +12,10 @@ import {
   Download,
   Settings,
   Trash2,
-  Zap,
 } from "lucide-react";
 import { SubtitleEditor } from "./subtitle-editor";
 import { SubtitleExporter } from "@/lib/subtitle-export";
 import { SubtitleSaveButton } from "./subtitle-save-button";
-import { SubtitleOptimizer } from "./subtitle-optimizer";
 import { toast } from "sonner";
 
 interface SubtitleListProps {
@@ -39,7 +37,7 @@ export function SubtitleList({
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredSubtitles, setFilteredSubtitles] = useState<Subtitle[]>([]);
   const [editingSubtitle, setEditingSubtitle] = useState<Subtitle | null>(null);
-  const [showOptimizer, setShowOptimizer] = useState(false);
+
   const [showExportDialog, setShowExportDialog] = useState(false);
 
   useEffect(() => {
@@ -100,12 +98,6 @@ export function SubtitleList({
     }
   };
 
-  const handleOptimizeSubtitles = (optimizedSubtitles: Subtitle[]) => {
-    setSubtitles(optimizedSubtitles);
-    setShowOptimizer(false);
-    toast.success("Subtitles optimized successfully!");
-  };
-
   const isCurrentSubtitle = (subtitle: Subtitle) => {
     if (!currentSubtitle) return false;
     return subtitle.id === currentSubtitle.id;
@@ -131,16 +123,6 @@ export function SubtitleList({
             {currentVideo && (
               <SubtitleSaveButton video={currentVideo} subtitles={subtitles} />
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowOptimizer(true)}
-              className="education-button-secondary"
-              title="Optimize subtitles"
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Optimize
-            </Button>
           </div>
         </div>
 
@@ -352,17 +334,6 @@ export function SubtitleList({
             onSave={handleSaveSubtitle}
             onCancel={() => setEditingSubtitle(null)}
             onPlaySegment={onPlaySegment}
-          />
-        </div>
-      )}
-
-      {/* Subtitle Optimizer */}
-      {showOptimizer && (
-        <div className="mt-6">
-          <SubtitleOptimizer
-            subtitles={subtitles}
-            onOptimize={handleOptimizeSubtitles}
-            onCancel={() => setShowOptimizer(false)}
           />
         </div>
       )}

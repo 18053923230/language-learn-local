@@ -123,6 +123,8 @@ export async function POST(request: NextRequest) {
             processingTime: Date.now() - startTime,
             modelVersion: "universal",
             audioDuration: transcriptionResult.audio_duration || 0,
+            fileName: audioFile.name,
+            fileSize: audioFile.size,
           },
         };
 

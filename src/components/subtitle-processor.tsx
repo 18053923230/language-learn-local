@@ -13,6 +13,7 @@ interface SubtitleProcessorProps {
   onSubtitlesLoaded: (subtitles: Subtitle[]) => void;
   onAutoTranscribe: () => void;
   isTranscribing?: boolean;
+  hasRawData?: boolean;
 }
 
 export function SubtitleProcessor({
@@ -21,6 +22,7 @@ export function SubtitleProcessor({
   onSubtitlesLoaded,
   onAutoTranscribe,
   isTranscribing = false,
+  hasRawData = false,
 }: SubtitleProcessorProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -237,11 +239,18 @@ export function SubtitleProcessor({
         {/* Auto Transcribe Button */}
         <Button
           onClick={onAutoTranscribe}
-          disabled={isUploading || isTranscribing}
+          disabled={isUploading || isTranscribing || hasRawData}
           className="flex-1"
+          title={
+            hasRawData ? "原始数据已存在，无需重复转录" : "自动转录音频生成字幕"
+          }
         >
           <Mic className="w-4 h-4 mr-2" />
-          {isTranscribing ? "Transcribing..." : "Auto Transcribe"}
+          {isTranscribing
+            ? "Transcribing..."
+            : hasRawData
+            ? "原始数据已存在"
+            : "Auto Transcribe"}
         </Button>
       </div>
 

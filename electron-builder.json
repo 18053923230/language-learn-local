@@ -1,0 +1,37 @@
+{
+  "appId": "com.language-learn.desktop",
+  "productName": "Language Learn Desktop",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/electron/**/*",
+    "out/**/*",
+    "node_modules/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "node_modules/@ffmpeg-installer/ffmpeg/ffmpeg.exe",
+      "to": "ffmpeg.exe"
+    }
+  ],
+  "win": {
+    "target": "nsis",
+    "icon": "public/icon.ico"
+  },
+  "mac": {
+    "target": "dmg",
+    "icon": "public/icon.icns"
+  },
+  "linux": {
+    "target": "AppImage",
+    "icon": "public/icon.png"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  }
+}

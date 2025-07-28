@@ -21,10 +21,10 @@ import {
 import { Subtitle } from "@/types/subtitle";
 import { Video as VideoType } from "@/types/video";
 import {
-  videoGenerator,
   VideoGenerationOptions,
   VideoGenerationProgress,
 } from "@/lib/video-generator";
+import { getVideoGenerator } from "@/lib/environment";
 import { toast } from "sonner";
 
 interface VideoGenerationButtonProps {
@@ -67,6 +67,9 @@ export function VideoGenerationButton({
     setGenerationProgress(null);
 
     try {
+      // 根据环境获取相应的视频生成器
+      const videoGenerator = await getVideoGenerator();
+
       const videoBlob = await videoGenerator.generateFromSingleVideo(
         currentVideo.file,
         filteredSubtitles,

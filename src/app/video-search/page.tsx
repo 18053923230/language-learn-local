@@ -21,7 +21,8 @@ import {
   MultiVideoSearchResult,
   SearchOptions,
 } from "@/lib/subtitle-search";
-import { videoGenerator, VideoSegment } from "@/lib/video-generator";
+import { VideoSegment } from "@/lib/video-generator";
+import { getVideoGenerator } from "@/lib/environment";
 import { toast } from "sonner";
 
 export default function VideoSearchPage() {
@@ -137,6 +138,9 @@ export default function VideoSearchPage() {
         return;
       }
 
+      // 根据环境获取相应的视频生成器
+      const videoGenerator = await getVideoGenerator();
+
       // 使用视频生成器生成视频
       const videoBlob = await videoGenerator.generateFromMultipleVideos(
         availableSegments,
@@ -149,7 +153,7 @@ export default function VideoSearchPage() {
           subtitleStyle: "overlay",
           outputResolution: "720p",
         },
-        (progress) => {
+        (progress: any) => {
           console.log("Video generation progress:", progress);
         }
       );

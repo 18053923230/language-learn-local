@@ -18,7 +18,13 @@ import { Video } from "@/types/video";
 import { Subtitle } from "@/types/subtitle";
 import { SubtitleVersion } from "@/types/subtitle-version";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Settings, Download } from "lucide-react";
+import {
+  BookOpen,
+  Settings,
+  Download,
+  Search,
+  Video as VideoIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { SubtitleDetectionDialog } from "@/components/subtitle-detection-dialog";
@@ -516,6 +522,26 @@ export default function HomePage() {
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Subtitles
+                </Button>
+              </Link>
+              <Link href="/video-search">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Video Search
+                </Button>
+              </Link>
+              <Link href="/demo">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <VideoIcon className="w-4 h-4 mr-2" />
+                  Demo
                 </Button>
               </Link>
               <Link href="/settings">

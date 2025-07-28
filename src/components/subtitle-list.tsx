@@ -16,6 +16,7 @@ import {
 import { SubtitleEditor } from "./subtitle-editor";
 import { SubtitleExporter } from "@/lib/subtitle-export";
 import { SubtitleSaveButton } from "./subtitle-save-button";
+import { VideoGenerationButton } from "./video-generation-button";
 import { toast } from "sonner";
 
 interface SubtitleListProps {
@@ -122,6 +123,14 @@ export function SubtitleList({
           <div className="flex items-center space-x-2">
             {currentVideo && (
               <SubtitleSaveButton video={currentVideo} subtitles={subtitles} />
+            )}
+            {currentVideo && filteredSubtitles.length > 0 && (
+              <VideoGenerationButton
+                subtitles={subtitles}
+                filteredSubtitles={filteredSubtitles}
+                currentVideo={currentVideo}
+                searchTerm={searchTerm}
+              />
             )}
           </div>
         </div>

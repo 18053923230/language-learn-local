@@ -1,6 +1,7 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import { Subtitle } from "@/types/subtitle";
+import { videoPerformanceOptimizer } from "./video-performance-optimizer";
 import { Video } from "@/types/video";
 
 export interface VideoSegment {
@@ -18,6 +19,9 @@ export interface VideoGenerationOptions {
   addSubtitles?: boolean;
   subtitleStyle?: "burned" | "overlay";
   outputResolution?: "720p" | "1080p" | "480p";
+  useOptimization?: boolean; // 性能优化选项
+  parallelProcessing?: boolean; // 并行处理选项
+  useHardwareAcceleration?: boolean; // 硬件加速选项（实验性）
 }
 
 export interface VideoGenerationProgress {
@@ -38,6 +42,13 @@ export class VideoGenerator {
     try {
       this.ffmpeg = new FFmpeg();
 
+      // 检测性能信息
+      await videoPerformanceOptimizer.detectPerformanceInfo();
+      console.log(
+        "Performance info detected:",
+        videoPerformanceOptimizer.getPerformanceReport()
+      );
+
       await this.ffmpeg.load({
         coreURL: await toBlobURL(
           "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js",
@@ -50,7 +61,9 @@ export class VideoGenerator {
       });
 
       this.isLoaded = true;
-      console.log("VideoGenerator FFmpeg loaded successfully");
+      console.log(
+        "VideoGenerator FFmpeg loaded successfully with performance optimization"
+      );
     } catch (error) {
       console.error("Failed to load VideoGenerator FFmpeg:", error);
       throw new Error("Failed to initialize video generator");
@@ -301,51 +314,73 @@ export class VideoGenerator {
   }
 
   /**
-   * 处理多个视频的片段
+   * 处理多个视频的片段（优化版本）
    */
   private async processMultipleVideoSegments(
     videoSegments: VideoSegment[],
     onProgress?: (current: number, total: number) => void
   ): Promise<string[]> {
     const segmentFiles: string[] = [];
+    const batchSize = videoPerformanceOptimizer.getOptimalBatchSize(); // 基于硬件配置的批处理大小
 
-    for (let i = 0; i < videoSegments.length; i++) {
-      const segment = videoSegments[i];
-      const segmentFileName = `segment_${i}.mp4`;
+    // 分批处理视频片段
+    for (
+      let batchStart = 0;
+      batchStart < videoSegments.length;
+      batchStart += batchSize
+    ) {
+      const batch = videoSegments.slice(batchStart, batchStart + batchSize);
 
-      try {
-        // 写入原始视频文件
-        await this.ffmpeg!.writeFile(
-          "input_video",
-          await fetchFile(segment.videoFile)
-        );
+      // 并行处理当前批次的片段
+      const batchPromises = batch.map(async (segment, batchIndex) => {
+        const globalIndex = batchStart + batchIndex;
+        const segmentFileName = `segment_${globalIndex}.mp4`;
 
-        // 提取视频片段
-        const args = [
-          "-i",
-          "input_video",
-          "-ss",
-          segment.startTime.toString(),
-          "-t",
-          (segment.endTime - segment.startTime).toString(),
-          "-c:v",
-          "libx264",
-          "-c:a",
-          "aac",
-          "-avoid_negative_ts",
-          "make_zero",
-          "-y",
-          segmentFileName,
-        ];
+        try {
+          // 写入原始视频文件
+          await this.ffmpeg!.writeFile(
+            `input_video_${globalIndex}`,
+            await fetchFile(segment.videoFile)
+          );
 
-        await this.ffmpeg!.exec(args);
-        segmentFiles.push(segmentFileName);
+          // 使用性能优化器的 FFmpeg 参数
+          const optimizationArgs =
+            videoPerformanceOptimizer.getFFmpegOptimizationArgs();
+          const args = [
+            "-i",
+            `input_video_${globalIndex}`,
+            "-ss",
+            segment.startTime.toString(),
+            "-t",
+            (segment.endTime - segment.startTime).toString(),
+            ...optimizationArgs,
+            "-avoid_negative_ts",
+            "make_zero",
+            "-y",
+            segmentFileName,
+          ];
 
-        onProgress?.(i + 1, videoSegments.length);
-      } catch (error) {
-        console.error(`Error processing multi-video segment ${i}:`, error);
-        throw new Error(`Failed to process multi-video segment ${i}`);
-      }
+          await this.ffmpeg!.exec(args);
+          return segmentFileName;
+        } catch (error) {
+          console.error(
+            `Error processing multi-video segment ${globalIndex}:`,
+            error
+          );
+          throw new Error(
+            `Failed to process multi-video segment ${globalIndex}`
+          );
+        }
+      });
+
+      // 等待当前批次完成
+      const batchResults = await Promise.all(batchPromises);
+      segmentFiles.push(...batchResults);
+
+      onProgress?.(
+        Math.min(batchStart + batchSize, videoSegments.length),
+        videoSegments.length
+      );
     }
 
     return segmentFiles;
@@ -391,10 +426,17 @@ export class VideoGenerator {
         "concat_list.txt",
         "-c:v",
         "libx264",
+        "-preset",
+        "ultrafast", // 使用最快的编码预设
+        "-crf",
+        "23", // 平衡质量和速度
         "-c:a",
         "aac",
+        "-b:a",
+        "128k", // 固定音频比特率
+        "-movflags",
+        "+faststart", // 优化网络播放
         ...resolution,
-        ...qualitySettings,
         "-y",
         outputFileName,
       ];

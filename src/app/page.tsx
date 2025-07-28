@@ -24,6 +24,8 @@ import {
   Download,
   Search,
   Video as VideoIcon,
+  HardDrive,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -86,6 +88,18 @@ export default function HomePage() {
         cachedAt: new Date(),
         lastAccessed: new Date(),
       });
+
+      // 保存视频文件到项目目录
+      try {
+        const { videoStorageService } = await import("@/lib/video-storage");
+        await videoStorageService.saveVideoFile(file, video.id, {
+          duration: video.duration,
+        });
+        console.log(`Video file saved to project directory: ${video.id}`);
+      } catch (error) {
+        console.error("Error saving video file:", error);
+        // 即使保存失败，也继续处理视频
+      }
 
       // Store the file for later transcription
       setCurrentVideo({ ...video, file });
@@ -532,6 +546,26 @@ export default function HomePage() {
                 >
                   <Search className="w-4 h-4 mr-2" />
                   Video Search
+                </Button>
+              </Link>
+              <Link href="/video-management">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <HardDrive className="w-4 h-4 mr-2" />
+                  Video Management
+                </Button>
+              </Link>
+              <Link href="/performance-monitor">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Performance
                 </Button>
               </Link>
               <Link href="/demo">

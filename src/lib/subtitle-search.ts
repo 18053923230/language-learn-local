@@ -327,11 +327,9 @@ export class SubtitleSearchService {
    */
   private async getVideoFile(videoId: string): Promise<File | null> {
     try {
-      // 这里需要从视频存储中获取文件
-      // 由于当前架构限制，我们暂时返回 null
-      // 在实际实现中，需要从 IndexedDB 或其他存储中获取视频文件
-      console.log(`Attempting to get video file for: ${videoId}`);
-      return null;
+      // 从视频存储服务获取文件
+      const { videoStorageService } = await import("./video-storage");
+      return await videoStorageService.getVideoFile(videoId);
     } catch (error) {
       console.error(`Error getting video file for ${videoId}:`, error);
       return null;

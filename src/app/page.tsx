@@ -90,14 +90,19 @@ export default function HomePage() {
       });
 
       // 保存视频文件到项目目录
+      let videoFileSaved = false;
       try {
         const { videoStorageService } = await import("@/lib/video-storage");
         await videoStorageService.saveVideoFile(file, video.id, {
           duration: video.duration,
         });
         console.log(`Video file saved to project directory: ${video.id}`);
+        videoFileSaved = true;
       } catch (error) {
         console.error("Error saving video file:", error);
+        toast.error(
+          "Failed to save video file. Video generation may not work properly."
+        );
         // 即使保存失败，也继续处理视频
       }
 

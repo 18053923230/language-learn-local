@@ -118,10 +118,27 @@ export class VideoStorageService {
       const transaction = db.transaction(["videoData"], "readwrite");
       const store = transaction.objectStore("videoData");
 
-      await store.put({
-        id: videoId,
-        data: uint8Array,
-        timestamp: Date.now(),
+      return new Promise((resolve, reject) => {
+        const request = store.put({
+          id: videoId,
+          data: uint8Array,
+          timestamp: Date.now(),
+        });
+
+        request.onsuccess = () => {
+          console.log(
+            `File data stored for ${videoId}, size: ${uint8Array.length} bytes`
+          );
+          resolve();
+        };
+
+        request.onerror = () => {
+          console.error(
+            `Error storing file data for ${videoId}:`,
+            request.error
+          );
+          reject(request.error);
+        };
       });
     } catch (error) {
       console.error("Error storing file data:", error);
@@ -194,8 +211,29 @@ export class VideoStorageService {
       const transaction = db.transaction(["videoData"], "readonly");
       const store = transaction.objectStore("videoData");
 
-      const result = await store.get(videoId);
-      return result ? result.data : null;
+      return new Promise((resolve, reject) => {
+        const request = store.get(videoId);
+
+        request.onsuccess = () => {
+          if (request.result) {
+            console.log(
+              `File data retrieved for ${videoId}, size: ${request.result.data.length} bytes`
+            );
+            resolve(request.result.data);
+          } else {
+            console.warn(`No file data found for ${videoId}`);
+            resolve(null);
+          }
+        };
+
+        request.onerror = () => {
+          console.error(
+            `Error getting file data for ${videoId}:`,
+            request.error
+          );
+          reject(request.error);
+        };
+      });
     } catch (error) {
       console.error("Error getting file data:", error);
       return null;

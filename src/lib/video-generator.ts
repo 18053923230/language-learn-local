@@ -282,7 +282,9 @@ export class VideoGenerator {
           await fetchFile(segment.videoFile)
         );
 
-        // 提取视频片段
+        // 使用性能优化器的 FFmpeg 参数
+        const optimizationArgs =
+          videoPerformanceOptimizer.getFFmpegOptimizationArgs();
         const args = [
           "-i",
           "input_video",
@@ -290,10 +292,7 @@ export class VideoGenerator {
           segment.startTime.toString(),
           "-t",
           (segment.endTime - segment.startTime).toString(),
-          "-c:v",
-          "libx264",
-          "-c:a",
-          "aac",
+          ...optimizationArgs,
           "-avoid_negative_ts",
           "make_zero",
           "-y", // 覆盖输出文件
@@ -405,18 +404,45 @@ export class VideoGenerator {
     } = options;
 
     try {
-      // 创建片段列表文件
+      // 检查片段文件是否存在
+      console.log("Checking segment files:", segmentFiles);
+      for (const file of segmentFiles) {
+        try {
+          await this.ffmpeg!.readFile(file);
+          console.log(`Segment file ${file} exists`);
+        } catch (error) {
+          console.error(`Segment file ${file} not found:`, error);
+          throw new Error(`Segment file ${file} not found`);
+        }
+      }
+
+      // 创建片段列表文件，添加黑屏转场
       const concatList = segmentFiles
-        .map((file) => `file '${file}'`)
+        .map((file, index) => {
+          let result = `file '${file}'`;
+
+          // 在片段之间添加黑屏转场
+          if (index < segmentFiles.length - 1) {
+            const transitionDuration = options.transitionDuration || 0.5;
+            if (transitionDuration > 0) {
+              result += `\nduration ${transitionDuration}`;
+            }
+          }
+
+          return result;
+        })
         .join("\n");
 
+      console.log("Creating concat list:", concatList);
       await this.ffmpeg!.writeFile("concat_list.txt", concatList);
 
       // 设置输出参数
       const outputFileName = `output.${outputFormat}`;
       const resolution = this.getResolutionSettings(outputResolution);
-      const qualitySettings = this.getQualitySettings(quality);
 
+      // 使用性能优化器的 FFmpeg 参数（包含质量设置）
+      const optimizationArgs =
+        videoPerformanceOptimizer.getFFmpegOptimizationArgs();
       const args = [
         "-f",
         "concat",
@@ -426,25 +452,18 @@ export class VideoGenerator {
         "concat_list.txt",
         "-c:v",
         "libx264",
-        "-preset",
-        "ultrafast", // 使用最快的编码预设
-        "-crf",
-        "23", // 平衡质量和速度
-        "-c:a",
-        "aac",
-        "-b:a",
-        "128k", // 固定音频比特率
-        "-movflags",
-        "+faststart", // 优化网络播放
+        ...optimizationArgs,
         ...resolution,
         "-y",
         outputFileName,
       ];
 
+      console.log("Combining video segments with args:", args);
       await this.ffmpeg!.exec(args);
       onProgress?.(1.0);
 
       // 读取输出文件
+      console.log("Reading output file:", outputFileName);
       const data = await this.ffmpeg!.readFile(outputFileName);
       const videoBlob = new Blob([data], { type: `video/${outputFormat}` });
 
@@ -455,6 +474,15 @@ export class VideoGenerator {
       return videoBlob;
     } catch (error) {
       console.error("Error combining video segments:", error);
+
+      // 尝试清理临时文件
+      try {
+        await this.ffmpeg!.deleteFile("concat_list.txt");
+        await this.ffmpeg!.deleteFile(`output.${outputFormat}`);
+      } catch (cleanupError) {
+        console.warn("Failed to cleanup files:", cleanupError);
+      }
+
       throw new Error("Failed to combine video segments");
     }
   }

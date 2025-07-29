@@ -10,6 +10,8 @@ export interface PerformanceInfo {
   hasWebGL2: boolean;
   hasWebCodecs: boolean;
   hasSharedArrayBuffer: boolean;
+  hasNvidiaGPU: boolean;
+  gpuInfo: string;
   browser: string;
   platform: string;
   userAgent: string;
@@ -59,6 +61,8 @@ export class VideoPerformanceOptimizer {
       hasWebGL2: this.detectWebGL2(),
       hasWebCodecs: this.detectWebCodecs(),
       hasSharedArrayBuffer: this.detectSharedArrayBuffer(),
+      hasNvidiaGPU: this.detectNvidiaGPU(),
+      gpuInfo: this.getGPUInfo(),
       browser: this.detectBrowser(),
       platform: navigator.platform,
       userAgent: navigator.userAgent,
@@ -86,15 +90,16 @@ export class VideoPerformanceOptimizer {
       };
     }
 
-    // 基于硬件配置的优化建议
+    // 基于硬件配置的优化建议 - 压榨系统资源
     const recommendations: OptimizationRecommendations = {
       useParallelProcessing: info.cpuCores > 2,
-      batchSize: Math.min(Math.max(1, Math.floor(info.cpuCores / 2)), 4),
-      useHardwareAcceleration: info.hasWebGL2 && info.hasWebCodecs,
+      batchSize: Math.min(info.cpuCores, 8), // 8核处理器设置8个并行
+      useHardwareAcceleration:
+        (info.hasWebGL2 && info.hasWebCodecs) || info.hasNvidiaGPU,
       qualityPreset: this.getQualityPreset(info),
       crfValue: this.getCRFValue(info),
       audioBitrate: this.getAudioBitrate(info),
-      maxConcurrentSegments: Math.min(info.cpuCores, 4),
+      maxConcurrentSegments: info.cpuCores, // 检测几核就几个并行
     };
 
     return recommendations;
@@ -105,21 +110,33 @@ export class VideoPerformanceOptimizer {
    */
   getFFmpegOptimizationArgs(): string[] {
     const recommendations = this.getOptimizationRecommendations();
+    const info = this.performanceInfo;
 
-    return [
+    const args = [
       "-preset",
-      recommendations.qualityPreset,
+      "ultrafast", // 强制使用最快预设
       "-crf",
-      recommendations.crfValue.toString(),
+      "20", // 稍微降低质量以提高速度
       "-c:a",
       "aac",
       "-b:a",
-      recommendations.audioBitrate,
+      "64k", // 降低音频比特率
       "-movflags",
       "+faststart",
       "-threads",
-      recommendations.maxConcurrentSegments.toString(),
+      "8", // 强制使用8线程
+      "-tune",
+      "fastdecode", // 优化解码速度
     ];
+
+    // 如果检测到NVIDIA GPU，添加硬件加速（仅在支持的环境中）
+    if (info && info.hasNvidiaGPU && typeof window !== "undefined") {
+      // 在Web环境中，硬件加速可能不稳定，暂时禁用
+      // args.push("-hwaccel", "cuda");
+      // args.push("-hwaccel_output_format", "cuda");
+    }
+
+    return args;
   }
 
   /**
@@ -157,6 +174,8 @@ CPU 核心数: ${info.cpuCores}
 WebGL 支持: ${info.hasWebGL ? "是" : "否"}
 WebGL2 支持: ${info.hasWebGL2 ? "是" : "否"}
 WebCodecs 支持: ${info.hasWebCodecs ? "是" : "否"}
+NVIDIA GPU: ${info.hasNvidiaGPU ? "是" : "否"}
+GPU 信息: ${info.gpuInfo}
 浏览器: ${info.browser}
 平台: ${info.platform}
 
@@ -215,6 +234,41 @@ CRF 值: ${recommendations.crfValue}
 
   private detectSharedArrayBuffer(): boolean {
     return typeof SharedArrayBuffer !== "undefined";
+  }
+
+  private detectNvidiaGPU(): boolean {
+    try {
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+      if (!gl) return false;
+
+      const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+      if (debugInfo) {
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        return renderer.toLowerCase().includes("nvidia");
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  private getGPUInfo(): string {
+    try {
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+      if (!gl) return "Unknown";
+
+      const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+      if (debugInfo) {
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        return `${vendor} ${renderer}`;
+      }
+      return "Unknown";
+    } catch {
+      return "Unknown";
+    }
   }
 
   private detectBrowser(): string {

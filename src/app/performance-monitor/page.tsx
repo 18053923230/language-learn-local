@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Cpu,
-  Memory,
+  MemoryStick,
   Monitor,
   Zap,
   Settings,
@@ -78,7 +78,11 @@ export default function PerformanceMonitorPage() {
 
   const getPerformanceLevel = (
     score: number
-  ): { level: string; color: string; icon: any } => {
+  ): {
+    level: string;
+    color: string;
+    icon: React.ComponentType<{ className?: string }>;
+  } => {
     if (score >= 80)
       return { level: "优秀", color: "text-green-600", icon: CheckCircle };
     if (score >= 60)
@@ -212,7 +216,7 @@ export default function PerformanceMonitorPage() {
                 </div>
 
                 <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                  <Memory className="w-6 h-6 text-green-600" />
+                  <MemoryStick className="w-6 h-6 text-green-600" />
                   <div>
                     <div className="font-semibold text-gray-900">可用内存</div>
                     <div className="text-gray-600">

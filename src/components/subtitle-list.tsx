@@ -17,6 +17,8 @@ import { SubtitleEditor } from "./subtitle-editor";
 import { SubtitleExporter } from "@/lib/subtitle-export";
 import { SubtitleSaveButton } from "./subtitle-save-button";
 import { VideoGenerationButton } from "./video-generation-button";
+import { VideoSegmentGenerationButton } from "./video-segment-generation-button";
+import { SmartVideoSegmentButton } from "./smart-video-segment-button";
 import { toast } from "sonner";
 
 interface SubtitleListProps {
@@ -125,12 +127,26 @@ export function SubtitleList({
               <SubtitleSaveButton video={currentVideo} subtitles={subtitles} />
             )}
             {currentVideo && filteredSubtitles.length > 0 && (
-              <VideoGenerationButton
-                subtitles={subtitles}
-                filteredSubtitles={filteredSubtitles}
-                currentVideo={currentVideo}
-                searchTerm={searchTerm}
-              />
+              <>
+                <VideoGenerationButton
+                  subtitles={subtitles}
+                  filteredSubtitles={filteredSubtitles}
+                  currentVideo={currentVideo}
+                  searchTerm={searchTerm}
+                />
+                <VideoSegmentGenerationButton
+                  subtitles={subtitles}
+                  filteredSubtitles={filteredSubtitles}
+                  currentVideo={currentVideo}
+                  searchTerm={searchTerm}
+                />
+                <SmartVideoSegmentButton
+                  subtitles={subtitles}
+                  filteredSubtitles={filteredSubtitles}
+                  currentVideo={currentVideo}
+                  searchTerm={searchTerm}
+                />
+              </>
             )}
           </div>
         </div>
@@ -156,7 +172,7 @@ export function SubtitleList({
             </span>
             {searchTerm && (
               <span className="text-green-600 font-medium">
-                Filtered by "{searchTerm}"
+                Filtered by &quot;{searchTerm}&quot;
               </span>
             )}
           </div>
@@ -187,7 +203,7 @@ export function SubtitleList({
               No Matching Subtitles
             </h3>
             <p className="text-gray-600 max-w-sm">
-              Try adjusting your search terms to find the subtitles you're
+              Try adjusting your search terms to find the subtitles you&apos;re
               looking for.
             </p>
           </div>

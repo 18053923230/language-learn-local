@@ -26,6 +26,7 @@ import {
   Video as VideoIcon,
   HardDrive,
   Zap,
+  FolderOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -561,6 +562,26 @@ export default function HomePage() {
                 >
                   <HardDrive className="w-4 h-4 mr-2" />
                   Video Management
+                </Button>
+              </Link>
+              <Link href="/video-segments">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <FolderOpen className="w-4 h-4 mr-2" />
+                  Video Segments
+                </Button>
+              </Link>
+              <Link href="/unified-search">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  Unified Search
                 </Button>
               </Link>
               <Link href="/performance-monitor">

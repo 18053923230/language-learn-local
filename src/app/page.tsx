@@ -27,11 +27,13 @@ import {
   HardDrive,
   Zap,
   FolderOpen,
+  Smartphone,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { SubtitleDetectionDialog } from "@/components/subtitle-detection-dialog";
 import { SubtitleVersionDialog } from "@/components/subtitle-version-dialog";
+import { VerticalVideoGeneratorButton } from "@/components/vertical-video-generator-button";
 
 export default function HomePage() {
   const { currentVideo, setCurrentVideo, setSubtitles, setCurrentSubtitle } =
@@ -604,6 +606,16 @@ export default function HomePage() {
                   Demo
                 </Button>
               </Link>
+              <Link href="/test-vertical-video">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <Smartphone className="w-4 h-4 mr-2" />
+                  竖屏视频
+                </Button>
+              </Link>
               <Link href="/settings">
                 <Button variant="ghost" size="sm" className="hover:bg-blue-50">
                   <Settings className="w-4 h-4" />
@@ -787,6 +799,18 @@ export default function HomePage() {
                     onAddToVocabulary={handleAddToVocabulary}
                   />
                 </div>
+
+                {/* Vertical Video Generator */}
+                {currentVideo.processed && hasRawData && (
+                  <div className="mt-6 education-card overflow-hidden">
+                    <VerticalVideoGeneratorButton
+                      onVideoGenerated={(videoBlob) => {
+                        console.log("Vertical video generated:", videoBlob);
+                        toast.success("竖屏视频生成成功！");
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Subtitles Panel */}

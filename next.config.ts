@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
     return config;
   },
 
-  // Enable WASM in headers
+  // SEO and Performance Optimization
   async headers() {
     return [
       {
@@ -38,7 +38,41 @@ const nextConfig: NextConfig = {
             key: "Cross-Origin-Opener-Policy",
             value: "same-origin",
           },
+          // Cache control for static assets
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
+      },
+      {
+        source: "/api/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-cache, no-store, must-revalidate",
+          },
+        ],
+      },
+    ];
+  },
+
+  // Image optimization
+  images: {
+    domains: ["fluentreact.com"],
+    formats: ["image/webp", "image/avif"],
+  },
+
+  // Compression and optimization
+  compress: true,
+
+  // Redirects for SEO
+  async redirects() {
+    return [
+      {
+        source: "/language-reactor",
+        destination: "/language-reactor-alternative",
+        permanent: true,
       },
     ];
   },

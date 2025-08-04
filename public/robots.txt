@@ -1,0 +1,29 @@
+User-agent: *
+Allow: /
+
+# 禁止抓取敏感路径
+Disallow: /api/
+Disallow: /admin/
+Disallow: /privacy
+Disallow: /terms
+Disallow: /debug-storage/
+Disallow: /performance-monitor/
+Disallow: /test-*
+
+# 允许抓取核心页面
+Allow: /how-it-works
+Allow: /language-reactor-alternative
+Allow: /faq
+Allow: /blog
+Allow: /vocabulary
+Allow: /subtitles
+Allow: /video-search
+Allow: /video-management
+Allow: /video-segments
+Allow: /unified-search
+
+# 爬取延迟
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://fluentreact.com/sitemap.xml 

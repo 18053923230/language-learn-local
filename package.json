@@ -1,6 +1,18 @@
 {
-  "name": "language-learn-local",
-  "version": "0.1.0",
+  "name": "fluentreact",
+  "version": "1.0.0",
+  "description": "Interactive video language learning platform - the perfect companion for your video files. All processing happens locally on your device for complete privacy.",
+  "keywords": [
+    "language learning",
+    "video subtitles",
+    "interactive learning",
+    "English practice",
+    "local processing",
+    "privacy-first",
+    "Language Reactor alternative"
+  ],
+  "author": "FluentReact Team",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

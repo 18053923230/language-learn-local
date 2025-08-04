@@ -1,4 +1,4 @@
-import { spawn, SpawnOptions } from "child_process";
+import { spawn, spawnSync, SpawnOptions } from "child_process";
 import * as os from "os";
 import * as path from "path";
 import * as fs from "fs";
@@ -73,7 +73,7 @@ export class FFmpegService {
 
     for (const ffmpegPath of possiblePaths) {
       try {
-        const result = spawn.sync(ffmpegPath, ["-version"], { stdio: "pipe" });
+        const result = spawnSync(ffmpegPath, ["-version"], { stdio: "pipe" });
         if (result.status === 0) {
           return ffmpegPath;
         }
@@ -367,7 +367,11 @@ export class FFmpegService {
   /**
    * 获取视频信息
    */
-  async getVideoInfo(videoPath: string): Promise<any> {
+  async getVideoInfo(videoPath: string): Promise<{
+    duration: number;
+    resolution: { width: number; height: number } | null;
+    fps: number | null;
+  }> {
     const result = await this.exec(["-i", videoPath, "-f", "null", "-"]);
 
     // 解析视频信息

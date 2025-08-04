@@ -300,7 +300,7 @@ export default function HomePage() {
     setSubtitles(version.subtitles);
     setIsVersionDialogOpen(false);
 
-    toast.success(`已切换到: ${version.versionName}`);
+    toast.success(`Switched to: ${version.versionName}`);
   };
 
   // Auto generate smart subtitle version from raw data
@@ -338,14 +338,14 @@ export default function HomePage() {
       setAvailableVersions([smartVersion]);
 
       toast.success(
-        `已自动生成智能分段字幕！共 ${smartVersion.subtitles.length} 个段落`
+        `Smart subtitle segments generated! ${smartVersion.subtitles.length} segments created`
       );
 
       console.log("Auto generated smart subtitle version:", smartVersion);
       return true;
     } catch (error) {
       console.error("Error auto generating smart subtitle:", error);
-      toast.error("自动生成智能分段字幕失败");
+      toast.error("Failed to generate smart subtitle segments");
       return false;
     } finally {
       setIsAutoGenerating(false);
@@ -477,7 +477,7 @@ export default function HomePage() {
               "assemblyai"
             );
 
-            toast.success("智能分段字幕生成成功！");
+            toast.success("Smart subtitle segments generated successfully!");
           } catch (versionError) {
             console.error("Error creating smart version:", versionError);
             // 如果智能版本创建失败，使用原始字幕
@@ -519,10 +519,10 @@ export default function HomePage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">L</span>
+                <span className="text-white font-bold text-sm">FR</span>
               </div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                Language Learning Platform
+                FluentReact
               </h1>
             </div>
             <div className="flex items-center space-x-3">
@@ -546,74 +546,44 @@ export default function HomePage() {
                   Subtitles
                 </Button>
               </Link>
-              <Link href="/video-search">
+              <Link href="/how-it-works">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  How It Works
+                </Button>
+              </Link>
+              <Link href="/language-reactor-alternative">
                 <Button
                   variant="outline"
                   size="sm"
                   className="education-button-secondary"
                 >
                   <Search className="w-4 h-4 mr-2" />
-                  Video Search
+                  vs Language Reactor
                 </Button>
               </Link>
-              <Link href="/video-management">
+              <Link href="/faq">
                 <Button
                   variant="outline"
                   size="sm"
                   className="education-button-secondary"
                 >
-                  <HardDrive className="w-4 h-4 mr-2" />
-                  Video Management
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  FAQ
                 </Button>
               </Link>
-              <Link href="/video-segments">
+              <Link href="/blog">
                 <Button
                   variant="outline"
                   size="sm"
                   className="education-button-secondary"
                 >
-                  <FolderOpen className="w-4 h-4 mr-2" />
-                  Video Segments
-                </Button>
-              </Link>
-              <Link href="/unified-search">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <Search className="w-4 h-4 mr-2" />
-                  Unified Search
-                </Button>
-              </Link>
-              <Link href="/performance-monitor">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Performance
-                </Button>
-              </Link>
-              <Link href="/demo">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <VideoIcon className="w-4 h-4 mr-2" />
-                  Demo
-                </Button>
-              </Link>
-              <Link href="/test-vertical-video">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <Smartphone className="w-4 h-4 mr-2" />
-                  竖屏视频
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Blog
                 </Button>
               </Link>
               <Link href="/settings">
@@ -636,12 +606,17 @@ export default function HomePage() {
                   <span className="text-white text-2xl font-bold">🎬</span>
                 </div>
                 <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                  Start Learning with Video
+                  Master English with Any Video You Love
                 </h2>
                 <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-                  Upload a video file and we'll automatically generate subtitles
-                  to help you learn the language. Support for multiple languages
-                  and formats.
+                  Transform any video file into an interactive language learning
+                  experience. Click subtitles to play, loop sentences, and build
+                  your vocabulary naturally.
+                  <strong className="text-blue-600">
+                    {" "}
+                    All processing happens locally on your device for complete
+                    privacy.
+                  </strong>
                 </p>
               </div>
 
@@ -707,10 +682,11 @@ export default function HomePage() {
                         </div>
                         <div>
                           <h4 className="text-sm font-semibold text-blue-800">
-                            原始数据已存在
+                            Raw Data Available
                           </h4>
                           <p className="text-xs text-blue-600 mt-1">
-                            此视频的原始转录数据已保存在本地，无需重复转录
+                            Original transcription data is already saved
+                            locally, no need to re-transcribe
                           </p>
                         </div>
                       </div>
@@ -726,10 +702,11 @@ export default function HomePage() {
                         </div>
                         <div>
                           <h4 className="text-sm font-semibold text-purple-800">
-                            正在自动生成智能分段字幕
+                            Generating Smart Subtitles
                           </h4>
                           <p className="text-xs text-purple-600 mt-1">
-                            基于原始数据生成基于句末标点的智能分段字幕
+                            Creating intelligent subtitle segments based on
+                            sentence endings
                           </p>
                         </div>
                       </div>
@@ -801,16 +778,16 @@ export default function HomePage() {
                 </div>
 
                 {/* Vertical Video Generator */}
-                {currentVideo.processed && hasRawData && (
+                {/* {currentVideo.processed && hasRawData && (
                   <div className="mt-6 education-card overflow-hidden">
                     <VerticalVideoGeneratorButton
                       onVideoGenerated={(videoBlob) => {
                         console.log("Vertical video generated:", videoBlob);
-                        toast.success("竖屏视频生成成功！");
+                        toast.success("Vertical video generated successfully!");
                       }}
                     />
                   </div>
-                )}
+                )} */}
               </div>
 
               {/* Subtitles Panel */}

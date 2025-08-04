@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { RawTranscriptionData } from "@/types/raw-transcription";
+// import { RawTranscriptionData } from "@/types/raw-transcription";
 
 const ASSEMBLYAI_API_KEY =
   process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY ||

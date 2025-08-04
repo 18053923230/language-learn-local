@@ -134,7 +134,7 @@ export function SubtitleList({
                   currentVideo={currentVideo}
                   searchTerm={searchTerm}
                 />
-                <VideoSegmentGenerationButton
+                {/* <VideoSegmentGenerationButton
                   subtitles={subtitles}
                   filteredSubtitles={filteredSubtitles}
                   currentVideo={currentVideo}
@@ -145,7 +145,7 @@ export function SubtitleList({
                   filteredSubtitles={filteredSubtitles}
                   currentVideo={currentVideo}
                   searchTerm={searchTerm}
-                />
+                /> */}
               </>
             )}
           </div>

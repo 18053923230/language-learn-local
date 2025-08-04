@@ -13,7 +13,13 @@ import Link from "next/link";
 import { COMMON_SHORTCUTS } from "@/hooks/use-keyboard-shortcuts";
 
 export default function HelpPage() {
-  const formatKeyCombo = (shortcut: any): string => {
+  const formatKeyCombo = (shortcut: {
+    ctrl?: boolean;
+    shift?: boolean;
+    alt?: boolean;
+    meta?: boolean;
+    key: string;
+  }): string => {
     const parts: string[] = [];
 
     if (shortcut.ctrl) parts.push("Ctrl");

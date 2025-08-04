@@ -47,7 +47,7 @@ export default function TestVerticalVideoPage() {
           }
 
           // 检查是否有字幕版本
-          const versions = await subtitleVersionStorage.getVersions(
+          const versions = await subtitleVersionStorage.getVersionsByVideoId(
             currentVideo.id
           );
           if (versions.length > 0) {

@@ -27,7 +27,6 @@ import { VideoStorageService } from "@/lib/video-storage";
 import { Video } from "@/types/video";
 import { Subtitle } from "@/types/subtitle";
 import { SubtitleVersion } from "@/types/subtitle-version";
-import { translationService } from "@/lib/translation-service";
 import { Plus, List } from "lucide-react";
 import Link from "next/link";
 
@@ -809,8 +808,21 @@ export default function HomePage() {
                           <p className="text-xs text-yellow-700 mt-1">
                             Auto transcription is only available for English
                             videos. Please upload your subtitle file manually.
-                            After uploading, click "Save" to store subtitles for
-                            future use.
+                            After uploading, click "Save Subtitles" to store
+                            subtitles for future use.
+                          </p>
+                          <p className="text-xs text-yellow-600 mt-2">
+                            <strong>Need online translation?</strong> Contact me
+                            at{" "}
+                            <a
+                              href="mailto:260316514@qq.com"
+                              className="underline hover:text-yellow-800"
+                            >
+                              260316514@qq.com
+                            </a>
+                            . I'm only familiar with Chinese and English. If
+                            there are 100+ requests for other languages, I'll
+                            develop this feature.
                           </p>
                         </div>
                       </div>

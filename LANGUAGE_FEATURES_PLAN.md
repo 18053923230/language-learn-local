@@ -24,12 +24,14 @@
 - ✅ 字幕保存提醒功能
 - ✅ 翻译功能状态显示
 
-### 4. 翻译服务集成 ✅
+### 4. 翻译服务集成 ❌ (已移除)
 
-- ✅ LibreTranslate 公共实例轮询
-- ✅ 智能重试机制
-- ✅ 本地缓存优化
-- ✅ 错误处理和降级
+- ❌ LibreTranslate 公共实例轮询
+- ❌ 智能重试机制
+- ❌ 本地缓存优化
+- ❌ 错误处理和降级
+
+**说明**：由于决定完全禁用非英语视频的词典功能，翻译服务已不再需要。
 
 ### 5. 字幕管理 ✅
 
@@ -72,8 +74,8 @@
 
 - ✅ `src/components/file-upload.tsx` - 语言选择扩展
 - ✅ `src/app/page.tsx` - 条件渲染和用户提示
-- ✅ `src/components/learning-panel.tsx` - 翻译功能集成
-- ✅ `src/lib/translation-service.ts` - 翻译服务（新建）
+- ✅ `src/components/learning-panel.tsx` - 词典功能条件显示
+- ❌ `src/lib/translation-service.ts` - 翻译服务（已删除）
 - ✅ `src/components/subtitle-processor.tsx` - 条件显示 Auto Transcribe
 
 ### 配置文件 ✅

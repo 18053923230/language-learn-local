@@ -3,23 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  BookOpen,
-  Volume2,
-  Repeat,
-  Plus,
-  Settings,
-  Play,
-  RotateCcw,
-  Square,
-} from "lucide-react";
+import { Volume2, Plus, Settings, Play } from "lucide-react";
 import { DictionaryAPI } from "@/lib/dictionary-api";
 
 interface LearningPanelProps {
@@ -37,10 +21,6 @@ export function LearningPanel({
 }: LearningPanelProps) {
   const { currentSubtitle, playerState, vocabulary } = useAppStore();
   const [selectedWord, setSelectedWord] = useState<string>("");
-  const [playbackMode, setPlaybackMode] = useState<
-    "normal" | "repeat" | "slow"
-  >("normal");
-  const [repeatCount, setRepeatCount] = useState(3);
   const [wordData, setWordData] = useState<{
     definition: string;
     partOfSpeech: string;
@@ -117,7 +97,7 @@ export function LearningPanel({
 
   const handlePlaySegment = () => {
     if (currentSubtitle && onPlaySegment) {
-      if (playbackMode === "repeat" && !isRepeating) {
+      if (isRepeating) {
         startRepeatPlayback();
       } else {
         onPlaySegment(currentSubtitle.start, currentSubtitle.end);
@@ -133,7 +113,8 @@ export function LearningPanel({
     let currentRepeat = 0;
 
     const playNextRepeat = () => {
-      if (currentRepeat < repeatCount) {
+      if (currentRepeat < 3) {
+        // Fixed repeat count to 3
         currentRepeat++;
         setRepeatProgress(currentRepeat);
         onPlaySegment(currentSubtitle.start, currentSubtitle.end);
@@ -153,15 +134,6 @@ export function LearningPanel({
 
     // 开始第一轮播放
     playNextRepeat();
-  };
-
-  const stopRepeatPlayback = () => {
-    if (repeatTimerRef.current) {
-      clearTimeout(repeatTimerRef.current);
-      repeatTimerRef.current = null;
-    }
-    setIsRepeating(false);
-    setRepeatProgress(0);
   };
 
   // 清理定时器
@@ -193,24 +165,6 @@ export function LearningPanel({
     return text.split(/\s+/).filter((word) => word.length > 0);
   };
 
-  const vocabularyCount = vocabulary.length;
-  const currentVideoStatus =
-    playerState.currentTime > 0
-      ? formatTime(playerState.currentTime)
-      : "Not started";
-  const playbackSpeed =
-    playerState.playbackRate > 0 ? `${playerState.playbackRate}x` : "Normal";
-
-  const handleExportVocabulary = () => {
-    // TODO: Implement export functionality
-    console.log("Export Vocabulary clicked");
-  };
-
-  const handleResetProgress = () => {
-    // TODO: Implement reset functionality
-    console.log("Reset Progress clicked");
-  };
-
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
@@ -237,12 +191,6 @@ export function LearningPanel({
         {/* Current Subtitle Learning */}
         {currentSubtitle && (
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
-            {/* <h4 className="text-lg font-semibold text-gray-800 flex items-center mb-3">
-              <span className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center mr-2">
-                <span className="text-blue-600 text-xs">📝</span>
-              </span>
-              Current Subtitle
-            </h4> */}
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600 font-mono">
@@ -282,12 +230,6 @@ export function LearningPanel({
 
         {/* Playback Controls */}
         <div className="space-y-4">
-          {/* <h4 className="text-lg font-semibold text-gray-800 flex items-center">
-            <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mr-2">
-              <span className="text-green-600 text-xs">▶️</span>
-            </span>
-            Playback Controls
-          </h4> */}
           <div className="space-y-4">
             <Button
               onClick={handlePlaySegment}
@@ -297,7 +239,7 @@ export function LearningPanel({
               {isRepeating ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Repeating ({repeatProgress}/{repeatCount})
+                  Repeating ({repeatProgress}/3)
                 </>
               ) : (
                 <>
@@ -306,47 +248,6 @@ export function LearningPanel({
                 </>
               )}
             </Button>
-
-            {/* <div className="flex space-x-2">
-              <Button
-                onClick={handlePlaySegment}
-                variant="outline"
-                className="flex-1 h-10 border-gray-200 hover:border-blue-300 hover:bg-blue-50 rounded-lg transition-all duration-200"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Repeat
-              </Button>
-              <Button
-                onClick={stopRepeatPlayback}
-                variant="outline"
-                className="flex-1 h-10 border-gray-200 hover:border-red-300 hover:bg-red-50 rounded-lg transition-all duration-200"
-              >
-                <Square className="w-4 h-4 mr-2" />
-                Stop
-              </Button>
-            </div> */}
-
-            {/* Playback Mode */}
-            {/* <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Playback Mode
-              </label>
-              <Select
-                value={playbackMode}
-                onValueChange={(value: "normal" | "slow" | "repeat") =>
-                  setPlaybackMode(value)
-                }
-              >
-                <SelectTrigger className="education-input h-10 bg-white border-gray-200">
-                  <SelectValue placeholder="Select playback mode" />
-                </SelectTrigger>
-                <SelectContent className="z-50 bg-white border border-gray-200 shadow-lg rounded-lg">
-                  <SelectItem value="normal">Normal Speed</SelectItem>
-                  <SelectItem value="slow">Slow Speed</SelectItem>
-                  <SelectItem value="repeat">Repeat Mode</SelectItem>
-                </SelectContent>
-              </Select>
-            </div> */}
           </div>
         </div>
 
@@ -410,7 +311,7 @@ export function LearningPanel({
                         <p>
                           <span className="font-medium">Example:</span>{" "}
                           <span className="text-gray-600 italic">
-                            "{wordData.example}"
+                            &quot;{wordData.example}&quot;
                           </span>
                         </p>
                       )}
@@ -460,76 +361,22 @@ export function LearningPanel({
                   {currentLanguage} videos, please use external translation
                   tools.
                 </p>
+                <p className="text-xs text-blue-600 mt-2">
+                  <strong>Need online translation?</strong> Contact me at{" "}
+                  <a
+                    href="mailto:260316514@qq.com"
+                    className="underline hover:text-blue-800"
+                  >
+                    260316514@qq.com
+                  </a>
+                  . I&apos;m only familiar with Chinese and English. If there
+                  are 100+ requests for other languages, I&apos;ll develop this
+                  feature.
+                </p>
               </div>
             </div>
           </div>
         )}
-
-        {/* Learning Progress */}
-        {/* <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-gray-800 flex items-center">
-            <span className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center mr-2">
-              <span className="text-orange-600 text-xs">📊</span>
-            </span>
-            Learning Progress
-          </h4>
-          <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl p-4 border border-orange-100">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">
-                  Vocabulary Items:
-                </span>
-                <span className="text-orange-600 font-bold">
-                  {vocabularyCount}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">
-                  Current Video:
-                </span>
-                <span className="text-blue-600 font-bold">
-                  {currentVideoStatus}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 font-medium">
-                  Playback Speed:
-                </span>
-                <span className="text-green-600 font-bold">
-                  {playbackSpeed}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div> */}
-
-        {/* Quick Actions */}
-        {/* <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-gray-800 flex items-center">
-            <span className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center mr-2">
-              <span className="text-indigo-600 text-xs">⚡</span>
-            </span>
-            Quick Actions
-          </h4>
-          <div className="space-y-3">
-            <Button
-              onClick={handleExportVocabulary}
-              variant="outline"
-              className="w-full h-11 bg-white border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50 text-indigo-700 font-medium rounded-lg transition-all duration-200"
-            >
-              <BookOpen className="w-4 h-4 mr-2" />
-              Export Vocabulary
-            </Button>
-            <Button
-              onClick={handleResetProgress}
-              variant="outline"
-              className="w-full h-11 bg-white border-gray-200 hover:border-red-300 hover:bg-red-50 text-gray-700 hover:text-red-700 font-medium rounded-lg transition-all duration-200"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset Progress
-            </Button>
-          </div>
-        </div> */}
       </div>
     </div>
   );

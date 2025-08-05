@@ -7,7 +7,7 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://fluentreact.com/how-it-works</loc>
+    <loc>https://fluentreact.com/help</loc>
     <lastmod>2024-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -49,51 +49,21 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://fluentreact.com/privacy</loc>
+    <loc>https://fluentreact.com/blog/video-language-learning-guide</loc>
     <lastmod>2024-01-15</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://fluentreact.com/terms</loc>
+    <loc>https://fluentreact.com/blog/improve-english-pronunciation</loc>
     <lastmod>2024-01-15</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://fluentreact.com/vocabulary</loc>
+    <loc>https://fluentreact.com/blog/best-language-learning-apps</loc>
     <lastmod>2024-01-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://fluentreact.com/subtitles</loc>
-    <lastmod>2024-01-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://fluentreact.com/video-search</loc>
-    <lastmod>2024-01-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://fluentreact.com/video-management</loc>
-    <lastmod>2024-01-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://fluentreact.com/video-segments</loc>
-    <lastmod>2024-01-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://fluentreact.com/unified-search</loc>
-    <lastmod>2024-01-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset> 

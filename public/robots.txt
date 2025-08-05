@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
 
-# 禁止抓取敏感路径
+# 禁止抓取敏感路径和个人信息
 Disallow: /api/
 Disallow: /admin/
 Disallow: /privacy
@@ -9,12 +9,24 @@ Disallow: /terms
 Disallow: /debug-storage/
 Disallow: /performance-monitor/
 Disallow: /test-*
+Disallow: /settings/
+Disallow: /my-list/
+Disallow: /migration-status/
+Disallow: /emergency-memory-cleanup/
+
+# 禁止抓取个人数据相关路径
+Disallow: /storage/
+Disallow: /data/
+Disallow: /user/
+Disallow: /account/
+Disallow: /profile/
 
 # 允许抓取核心页面
 Allow: /how-it-works
 Allow: /language-reactor-alternative
 Allow: /faq
 Allow: /blog
+Allow: /help
 Allow: /vocabulary
 Allow: /subtitles
 Allow: /video-search

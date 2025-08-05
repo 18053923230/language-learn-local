@@ -96,6 +96,12 @@
   footer {
     background: #111827 !important;
     background-image: none !important;
+    background: linear-gradient(to bottom, #111827, #1f2937) !important;
+  }
+
+  /* Ensure footer has proper isolation */
+  footer * {
+    background: transparent !important;
   }
 }
 

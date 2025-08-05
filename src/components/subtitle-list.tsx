@@ -120,7 +120,8 @@ export function SubtitleList({
             <span className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mr-3">
               <span className="text-white text-xs font-bold">📝</span>
             </span>
-            Subtitles ({filteredSubtitles.length} of {subtitles.length})
+            Subtitles ({subtitles.length} total){" "}
+            {/* DEBUG: Should show total count */}
           </h3>
           <div className="flex items-center space-x-2">
             {currentVideo && (
@@ -168,7 +169,10 @@ export function SubtitleList({
         <div className="px-6 py-3 bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-100">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-700 font-medium">
-              {filteredSubtitles.length} of {subtitles.length} subtitles
+              {searchTerm
+                ? `${filteredSubtitles.length} of ${subtitles.length}`
+                : `${subtitles.length}`}{" "}
+              subtitles
             </span>
             {searchTerm && (
               <span className="text-green-600 font-medium">
@@ -209,12 +213,16 @@ export function SubtitleList({
           </div>
         ) : (
           <div className="p-4 space-y-3">
-            {filteredSubtitles.map((subtitle) => {
+            {filteredSubtitles.map((subtitle, index) => {
               const isCurrent = currentSubtitle?.id === subtitle.id;
               const isPlaying =
                 playerState.isPlaying &&
                 playerState.currentTime >= subtitle.start &&
                 playerState.currentTime <= subtitle.end;
+
+              // Calculate position in total subtitles
+              const totalIndex =
+                subtitles.findIndex((s) => s.id === subtitle.id) + 1;
 
               return (
                 <div
@@ -234,6 +242,9 @@ export function SubtitleList({
                         <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
                           {formatTime(subtitle.start)} -{" "}
                           {formatTime(subtitle.end)}
+                        </span>
+                        <span className="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                          {totalIndex}/{subtitles.length}
                         </span>
                         {subtitle.confidence && (
                           <span

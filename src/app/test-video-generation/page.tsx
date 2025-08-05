@@ -342,7 +342,11 @@ export default function TestVideoGenerationPage() {
               </div>
 
               <div className="text-sm text-gray-600 mb-4">
-                Found {filteredSubtitles.length} of {subtitles.length} subtitles
+                Found{" "}
+                {searchTerm
+                  ? `${filteredSubtitles.length} of ${subtitles.length}`
+                  : `${subtitles.length}`}{" "}
+                subtitles
                 {searchTerm && ` matching "${searchTerm}"`}
               </div>
 
@@ -495,7 +499,7 @@ export default function TestVideoGenerationPage() {
             {/* Subtitles List */}
             <div className="education-card p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Subtitles ({filteredSubtitles.length} of {subtitles.length})
+                Subtitles ({subtitles.length} total)
               </h3>
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {filteredSubtitles.map((subtitle) => (

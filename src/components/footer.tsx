@@ -22,10 +22,11 @@ export function Footer({ className = "" }: FooterProps) {
     <footer
       className={`!bg-gray-900 !text-white relative z-50 ${className}`}
       style={{
-        background: "#111827 !important",
+        background: "linear-gradient(to bottom, #111827, #1f2937) !important",
         position: "relative",
         zIndex: 50,
         backgroundImage: "none !important",
+        isolation: "isolate",
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

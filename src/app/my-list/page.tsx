@@ -18,7 +18,6 @@ import {
   Calendar,
   Search,
   Filter,
-  BookOpen,
   Target,
   TrendingUp,
   Star,
@@ -41,6 +40,8 @@ import type { Video } from "@/types/video";
 import type { Subtitle } from "@/types/subtitle";
 import type { VocabularyItem } from "@/types/vocabulary";
 import { toast } from "sonner";
+import { Navigation } from "@/components/navigation";
+import { BookOpen } from "lucide-react";
 
 interface LearningProject {
   video: Video;
@@ -239,32 +240,14 @@ export default function MyListPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Video
-                </Button>
-              </Link>
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <BookOpen className="w-4 h-4 text-white" />
-                </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
-                  My Learning List
-                </h1>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navigation
+        showBackButton={true}
+        backButtonText="Back to Video"
+        backButtonHref="/"
+        title="My Learning List"
+        titleIcon={<BookOpen className="w-4 h-4 text-white" />}
+        titleGradient="from-purple-600 to-purple-800"
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}

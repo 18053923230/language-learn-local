@@ -15,6 +15,7 @@ import { rawTranscriptionStorage } from "@/lib/raw-transcription-storage";
 import { subtitleVersionStorage } from "@/lib/subtitle-version-storage";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { Video } from "@/types/video";
+import { useRouter } from "next/navigation";
 import { Subtitle } from "@/types/subtitle";
 import { SubtitleVersion } from "@/types/subtitle-version";
 import { Button } from "@/components/ui/button";
@@ -37,10 +38,13 @@ import { VerticalVideoGeneratorButton } from "@/components/vertical-video-genera
 import { TutorialSection } from "@/components/tutorial-section";
 import { TestimonialsSection } from "@/components/testimonials-section";
 import { Footer } from "@/components/footer";
+import { Navigation } from "@/components/navigation";
+import { Plus, List } from "lucide-react";
 
 export default function HomePage() {
   const { currentVideo, setCurrentVideo, setSubtitles, setCurrentSubtitle } =
     useAppStore();
+  const router = useRouter();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -406,6 +410,36 @@ export default function HomePage() {
     }
   };
 
+  // Add current project to My List
+  const handleAddToMyList = async () => {
+    if (!currentVideo) return;
+
+    try {
+      // TODO: 这里将调用My List数据库存储
+      // 保存视频路径、字幕数据、学习进度等
+      console.log("Adding to My List:", {
+        videoId: currentVideo.id,
+        videoName: currentVideo.name,
+        videoPath: currentVideo.url,
+        language: currentVideo.language,
+        duration: currentVideo.duration,
+        currentTime: 0, // TODO: 获取当前播放位置
+        subtitlesCount: useAppStore.getState().subtitles.length,
+        addedAt: new Date(),
+      });
+
+      toast.success("Added to My List successfully!");
+    } catch (error) {
+      console.error("Failed to add to My List:", error);
+      toast.error("Failed to add to My List");
+    }
+  };
+
+  // Navigate to My List
+  const handleGoToMyList = () => {
+    router.push("/my-list");
+  };
+
   const handleSubtitlesLoaded = async (subtitles: Subtitle[]) => {
     if (!currentVideo) return;
 
@@ -517,70 +551,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* # */}
-            <Link href="/">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">FR</span>
-                </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                  FluentReact
-                </h1>
-              </div>
-            </Link>
-            <div className="flex items-center space-x-3">
-              <Link href="/vocabulary">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Vocabulary
-                </Button>
-              </Link>
-              <Link href="/subtitles">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Subtitles
-                </Button>
-              </Link>
-              <Link href="/my-list">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  My List
-                </Button>
-              </Link>
-              <Link href="/blog">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Blog
-                </Button>
-              </Link>
-              <Link href="/settings">
-                <Button variant="ghost" size="sm" className="hover:bg-blue-50">
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navigation />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {!currentVideo ? (
@@ -762,6 +733,43 @@ export default function HomePage() {
                     onAddToVocabulary={handleAddToVocabulary}
                   />
                 </div>
+
+                {/* My List Actions - Only show when video is loaded */}
+                {currentVideo && (
+                  <div className="education-card p-6 border-2 border-red-500">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Learning Project Management
+                      </h3>
+                    </div>
+                    <div className="flex space-x-4">
+                      <Button
+                        onClick={handleAddToMyList}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add to My List
+                      </Button>
+                      <Button
+                        onClick={handleGoToMyList}
+                        variant="outline"
+                        className="flex-1 border-blue-300 text-blue-600 hover:bg-blue-50"
+                      >
+                        <List className="w-4 h-4 mr-2" />
+                        Go to My List
+                      </Button>
+                    </div>
+                    {/* Debug info */}
+                    <div className="mt-2 p-2 bg-yellow-100 text-xs">
+                      Debug: currentVideo exists, buttons should be visible
+                    </div>
+                  </div>
+                )}
+                {!currentVideo && (
+                  <div className="mt-2 p-2 bg-red-100 text-xs">
+                    Debug: currentVideo is null, buttons hidden
+                  </div>
+                )}
 
                 {/* Vertical Video Generator */}
                 {/* {currentVideo.processed && hasRawData && (

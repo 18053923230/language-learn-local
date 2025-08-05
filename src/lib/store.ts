@@ -25,6 +25,7 @@ interface AppState {
     volume: number;
     playbackRate: number;
   };
+  isLoadedFromMyList: boolean; // 新增：标记是否从My List加载
 }
 
 interface AppActions {
@@ -44,6 +45,8 @@ interface AppActions {
   setLanguage: (language: string) => void;
   // 播放器状态
   setPlayerState: (state: Partial<AppState["playerState"]>) => void;
+  setIsLoadedFromMyList: (isLoaded: boolean) => void; // 新增
+  resetState: () => void; // 新增
 }
 
 export const useAppStore = create<AppState & AppActions>()(
@@ -63,6 +66,7 @@ export const useAppStore = create<AppState & AppActions>()(
         volume: 1,
         playbackRate: 1,
       },
+      isLoadedFromMyList: false, // 新增
 
       // 视频相关
       setCurrentVideo: (video) => set({ currentVideo: video }),
@@ -102,6 +106,25 @@ export const useAppStore = create<AppState & AppActions>()(
         set((currentState) => ({
           playerState: { ...currentState.playerState, ...state },
         })),
+      setIsLoadedFromMyList: (isLoaded) =>
+        set({ isLoadedFromMyList: isLoaded }), // 新增
+      resetState: () =>
+        set({
+          currentVideo: null,
+          subtitles: [],
+          currentSubtitle: null,
+          vocabulary: [],
+          isProcessing: false,
+          language: "en",
+          playerState: {
+            isPlaying: false,
+            currentTime: 0,
+            duration: 0,
+            volume: 1,
+            playbackRate: 1,
+          },
+          isLoadedFromMyList: false, // 新增
+        }),
     }),
     {
       name: "language-learning-storage",

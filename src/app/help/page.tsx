@@ -1,369 +1,488 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Navigation } from "@/components/navigation";
 import {
   ArrowLeft,
-  Keyboard,
-  Video,
-  BookOpen,
+  ExternalLink,
+  Play,
   Settings,
-  HelpCircle,
+  List,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
-import { COMMON_SHORTCUTS } from "@/hooks/use-keyboard-shortcuts";
+import Image from "next/image";
+
+type Language = "zh" | "ja" | "ko" | "en";
+
+const helpContent = {
+  zh: {
+    title: "如何开始学习？",
+    subtitle: "完整的视频语言学习指南",
+    steps: [
+      {
+        title: "1. 获取学习视频",
+        description: "获取您想要学习的视频文件。推荐使用合法工具：",
+        details: [
+          "使用 yt-dlp 命令行工具下载 YouTube 视频",
+          "从其他合法视频平台下载",
+          "使用您自己的视频文件",
+          "确保遵守版权和使用条款",
+        ],
+        image: "/help/1.get_video.png",
+        tips: "💡 提示：选择有清晰语音的视频效果最佳",
+      },
+      {
+        title: "2. 上传视频文件",
+        description: "在首页选择语言并上传您的视频：",
+        details: [
+          "打开 FluentReact 首页",
+          "选择视频的语言（英语、日语等）",
+          "点击上传区域选择视频文件",
+          "等待视频处理完成",
+        ],
+        image: "/help/2.choose_language and upload file.png",
+        tips: "💡 支持 MP4、AVI、MOV 等常见格式",
+      },
+      {
+        title: "3. 获取字幕",
+        description: "通过 AI 自动生成字幕或上传现有字幕：",
+        details: [
+          "AI 自动转录：将视频转换为音频，上传到 AI 服务",
+          "需要 AssemblyAI API 密钥（免费额度）",
+          "耐心等待转录完成（取决于视频长度）",
+          "或直接上传 SRT、VTT 等字幕文件",
+        ],
+        image: "/help/3.get subtitles by ai.png",
+        tips: "💡 如果没有 API 密钥，系统会引导您设置",
+      },
+      {
+        title: "4. 设置 API 密钥",
+        description: "在设置页面添加您的 AssemblyAI API 密钥：",
+        details: [
+          "点击导航栏的齿轮图标进入设置",
+          "按照指引获取免费的 AssemblyAI API 密钥",
+          "注册账户获得 $50 免费额度（约50小时转录）",
+          "复制 API 密钥并粘贴到设置页面",
+        ],
+        image: "/help/4.input api key.png",
+        tips: "💡 API 密钥仅存储在本地，保护您的隐私",
+      },
+      {
+        title: "5. 开始学习",
+        description: "使用交互式功能进行语言学习：",
+        details: [
+          "点击视频自动播放到对应位置",
+          "手动选择字幕进行跟读练习",
+          "不熟悉的单词点击加入生词本",
+          "重要：点击底部的 'Add to My List' 保存项目",
+        ],
+        image: "/help/5.easy demo.png",
+        tips: "💡 添加到学习列表后可以随时继续学习",
+      },
+      {
+        title: "6. 管理学习项目",
+        description: "使用学习项目列表管理您的学习进度：",
+        details: [
+          "点击导航栏的 'My List' 查看所有项目",
+          "点击任意项目直接进入学习界面",
+          "查看学习进度和最后访问时间",
+          "其他功能可通过导航栏对应链接访问",
+        ],
+        image: "/help/6.learning projcts.png",
+        tips: "💡 所有数据存储在本地，确保隐私安全",
+      },
+    ],
+  },
+  ja: {
+    title: "学習を始めるには？",
+    subtitle: "完全な動画言語学習ガイド",
+    steps: [
+      {
+        title: "1. 学習動画を取得",
+        description:
+          "学習したい動画ファイルを取得します。合法なツールをお勧めします：",
+        details: [
+          "yt-dlp コマンドラインツールで YouTube 動画をダウンロード",
+          "他の合法な動画プラットフォームからダウンロード",
+          "自分の動画ファイルを使用",
+          "著作権と利用規約を遵守することを確認",
+        ],
+        image: "/help/1.get_video.png",
+        tips: "💡 ヒント：クリアな音声の動画を選ぶと効果的です",
+      },
+      {
+        title: "2. 動画ファイルをアップロード",
+        description: "ホームページで言語を選択し、動画をアップロード：",
+        details: [
+          "FluentReact ホームページを開く",
+          "動画の言語を選択（英語、日本語など）",
+          "アップロードエリアをクリックして動画ファイルを選択",
+          "動画処理の完了を待つ",
+        ],
+        image: "/help/2.choose_language and upload file.png",
+        tips: "💡 MP4、AVI、MOV などの一般的な形式をサポート",
+      },
+      {
+        title: "3. 字幕を取得",
+        description: "AI で自動生成するか、既存の字幕をアップロード：",
+        details: [
+          "AI 自動転写：動画を音声に変換し、AI サービスにアップロード",
+          "AssemblyAI API キーが必要（無料枠あり）",
+          "転写完了までお待ちください（動画の長さによります）",
+          "または SRT、VTT などの字幕ファイルを直接アップロード",
+        ],
+        image: "/help/3.get subtitles by ai.png",
+        tips: "💡 API キーがない場合、システムが設定を案内します",
+      },
+      {
+        title: "4. API キーを設定",
+        description: "設定ページで AssemblyAI API キーを追加：",
+        details: [
+          "ナビゲーションバーの歯車アイコンをクリックして設定に入る",
+          "無料の AssemblyAI API キーを取得する手順に従う",
+          "アカウント登録で $50 の無料枠を獲得（約50時間の転写）",
+          "API キーをコピーして設定ページに貼り付け",
+        ],
+        image: "/help/4.input api key.png",
+        tips: "💡 API キーはローカルにのみ保存され、プライバシーを保護",
+      },
+      {
+        title: "5. 学習を開始",
+        description: "インタラクティブ機能を使用して言語学習：",
+        details: [
+          "動画をクリックして対応する位置に自動再生",
+          "字幕を手動で選択してシャドーイング練習",
+          "知らない単語をクリックして単語帳に追加",
+          "重要：下部の 'Add to My List' をクリックしてプロジェクトを保存",
+        ],
+        image: "/help/5.easy demo.png",
+        tips: "💡 学習リストに追加すると、いつでも学習を続けることができます",
+      },
+      {
+        title: "6. 学習プロジェクトを管理",
+        description: "学習プロジェクトリストで学習進捗を管理：",
+        details: [
+          "ナビゲーションバーの 'My List' をクリックしてすべてのプロジェクトを表示",
+          "任意のプロジェクトをクリックして学習画面に直接入る",
+          "学習進捗と最終アクセス時間を確認",
+          "その他の機能はナビゲーションバーの対応するリンクからアクセス",
+        ],
+        image: "/help/6.learning projcts.png",
+        tips: "💡 すべてのデータはローカルに保存され、プライバシーの安全性を確保",
+      },
+    ],
+  },
+  ko: {
+    title: "학습을 시작하는 방법은?",
+    subtitle: "완전한 비디오 언어 학습 가이드",
+    steps: [
+      {
+        title: "1. 학습 비디오 획득",
+        description:
+          "학습하고 싶은 비디오 파일을 획득합니다. 합법적인 도구를 권장합니다：",
+        details: [
+          "yt-dlp 명령줄 도구로 YouTube 비디오 다운로드",
+          "다른 합법적인 비디오 플랫폼에서 다운로드",
+          "자신의 비디오 파일 사용",
+          "저작권 및 이용약관 준수 확인",
+        ],
+        image: "/help/1.get_video.png",
+        tips: "💡 팁：명확한 음성이 있는 비디오를 선택하면 효과적입니다",
+      },
+      {
+        title: "2. 비디오 파일 업로드",
+        description: "홈페이지에서 언어를 선택하고 비디오를 업로드：",
+        details: [
+          "FluentReact 홈페이지 열기",
+          "비디오의 언어 선택（영어、일본어 등）",
+          "업로드 영역을 클릭하여 비디오 파일 선택",
+          "비디오 처리 완료 대기",
+        ],
+        image: "/help/2.choose_language and upload file.png",
+        tips: "💡 MP4、AVI、MOV 등의 일반적인 형식을 지원",
+      },
+      {
+        title: "3. 자막 획득",
+        description: "AI로 자동 생성하거나 기존 자막을 업로드：",
+        details: [
+          "AI 자동 전사：비디오를 오디오로 변환하여 AI 서비스에 업로드",
+          "AssemblyAI API 키 필요（무료 할당량 있음）",
+          "전사 완료까지 기다려주세요（비디오 길이에 따라 다름）",
+          "또는 SRT、VTT 등의 자막 파일을 직접 업로드",
+        ],
+        image: "/help/3.get subtitles by ai.png",
+        tips: "💡 API 키가 없는 경우 시스템이 설정을 안내합니다",
+      },
+      {
+        title: "4. API 키 설정",
+        description: "설정 페이지에서 AssemblyAI API 키 추가：",
+        details: [
+          "네비게이션 바의 톱니바퀴 아이콘을 클릭하여 설정으로 들어가기",
+          "무료 AssemblyAI API 키를 획득하는 단계에 따라 진행",
+          "계정 등록으로 $50 무료 할당량 획득（약50시간 전사）",
+          "API 키를 복사하여 설정 페이지에 붙여넣기",
+        ],
+        image: "/help/4.input api key.png",
+        tips: "💡 API 키는 로컬에만 저장되어 개인정보를 보호합니다",
+      },
+      {
+        title: "5. 학습 시작",
+        description: "인터랙티브 기능을 사용하여 언어 학습：",
+        details: [
+          "비디오를 클릭하여 해당 위치로 자동 재생",
+          "자막을 수동으로 선택하여 섀도잉 연습",
+          "모르는 단어를 클릭하여 단어장에 추가",
+          "중요：하단의 'Add to My List'를 클릭하여 프로젝트 저장",
+        ],
+        image: "/help/5.easy demo.png",
+        tips: "💡 학습 목록에 추가하면 언제든지 학습을 계속할 수 있습니다",
+      },
+      {
+        title: "6. 학습 프로젝트 관리",
+        description: "학습 프로젝트 목록으로 학습 진행 상황 관리：",
+        details: [
+          "네비게이션 바의 'My List'를 클릭하여 모든 프로젝트 표시",
+          "임의의 프로젝트를 클릭하여 학습 화면으로 직접 들어가기",
+          "학습 진행 상황과 최종 접근 시간 확인",
+          "기타 기능은 네비게이션 바의 해당 링크에서 접근",
+        ],
+        image: "/help/6.learning projcts.png",
+        tips: "💡 모든 데이터는 로컬에 저장되어 개인정보의 안전성을 보장합니다",
+      },
+    ],
+  },
+  en: {
+    title: "How to Start Learning?",
+    subtitle: "Complete Video Language Learning Guide",
+    steps: [
+      {
+        title: "1. Get Learning Video",
+        description:
+          "Obtain the video file you want to learn from. We recommend using legal tools:",
+        details: [
+          "Use yt-dlp command line tool to download YouTube videos",
+          "Download from other legal video platforms",
+          "Use your own video files",
+          "Ensure compliance with copyright and terms of use",
+        ],
+        image: "/help/1.get_video.png",
+        tips: "💡 Tip: Choose videos with clear audio for best results",
+      },
+      {
+        title: "2. Upload Video File",
+        description: "Select language and upload your video on the homepage:",
+        details: [
+          "Open FluentReact homepage",
+          "Select the video's language (English, Japanese, etc.)",
+          "Click the upload area to select video file",
+          "Wait for video processing to complete",
+        ],
+        image: "/help/2.choose_language and upload file.png",
+        tips: "💡 Supports common formats like MP4, AVI, MOV",
+      },
+      {
+        title: "3. Get Subtitles",
+        description:
+          "Generate subtitles automatically via AI or upload existing ones:",
+        details: [
+          "AI auto-transcription: Convert video to audio, upload to AI service",
+          "Requires AssemblyAI API key (free credits available)",
+          "Wait patiently for transcription to complete (depends on video length)",
+          "Or directly upload subtitle files like SRT, VTT",
+        ],
+        image: "/help/3.get subtitles by ai.png",
+        tips: "💡 If you don't have an API key, the system will guide you to set it up",
+      },
+      {
+        title: "4. Set Up API Key",
+        description: "Add your AssemblyAI API key in the settings page:",
+        details: [
+          "Click the gear icon in navigation bar to enter settings",
+          "Follow the guide to get free AssemblyAI API key",
+          "Register account to get $50 free credits (about 50 hours of transcription)",
+          "Copy API key and paste it in the settings page",
+        ],
+        image: "/help/4.input api key.png",
+        tips: "💡 API key is only stored locally, protecting your privacy",
+      },
+      {
+        title: "5. Start Learning",
+        description: "Use interactive features for language learning:",
+        details: [
+          "Click video to auto-play to corresponding position",
+          "Manually select subtitles for shadowing practice",
+          "Click unfamiliar words to add to vocabulary list",
+          "Important: Click 'Add to My List' at the bottom to save project",
+        ],
+        image: "/help/5.easy demo.png",
+        tips: "💡 After adding to learning list, you can continue learning anytime",
+      },
+      {
+        title: "6. Manage Learning Projects",
+        description:
+          "Use learning project list to manage your learning progress:",
+        details: [
+          "Click 'My List' in navigation bar to view all projects",
+          "Click any project to directly enter learning interface",
+          "View learning progress and last access time",
+          "Other features accessible via corresponding links in navigation bar",
+        ],
+        image: "/help/6.learning projcts.png",
+        tips: "💡 All data stored locally, ensuring privacy and security",
+      },
+    ],
+  },
+};
 
 export default function HelpPage() {
-  const formatKeyCombo = (shortcut: {
-    ctrl?: boolean;
-    shift?: boolean;
-    alt?: boolean;
-    meta?: boolean;
-    key: string;
-  }): string => {
-    const parts: string[] = [];
-
-    if (shortcut.ctrl) parts.push("Ctrl");
-    if (shortcut.shift) parts.push("Shift");
-    if (shortcut.alt) parts.push("Alt");
-    if (shortcut.meta) parts.push("⌘");
-
-    parts.push(shortcut.key.toUpperCase());
-
-    return parts.join(" + ");
-  };
-
-  const shortcuts = [
-    {
-      ...COMMON_SHORTCUTS.PLAY_PAUSE,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.PLAY_PAUSE),
-    },
-    {
-      ...COMMON_SHORTCUTS.SEEK_FORWARD,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.SEEK_FORWARD),
-    },
-    {
-      ...COMMON_SHORTCUTS.SEEK_BACKWARD,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.SEEK_BACKWARD),
-    },
-    {
-      ...COMMON_SHORTCUTS.VOLUME_UP,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.VOLUME_UP),
-    },
-    {
-      ...COMMON_SHORTCUTS.VOLUME_DOWN,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.VOLUME_DOWN),
-    },
-    {
-      ...COMMON_SHORTCUTS.MUTE,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.MUTE),
-    },
-    {
-      ...COMMON_SHORTCUTS.FULLSCREEN,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.FULLSCREEN),
-    },
-    {
-      ...COMMON_SHORTCUTS.SPEED_UP,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.SPEED_UP),
-    },
-    {
-      ...COMMON_SHORTCUTS.SPEED_DOWN,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.SPEED_DOWN),
-    },
-    {
-      ...COMMON_SHORTCUTS.SPEED_RESET,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.SPEED_RESET),
-    },
-    {
-      ...COMMON_SHORTCUTS.ADD_TO_VOCABULARY,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.ADD_TO_VOCABULARY),
-    },
-    {
-      ...COMMON_SHORTCUTS.OPEN_VOCABULARY,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.OPEN_VOCABULARY),
-    },
-    {
-      ...COMMON_SHORTCUTS.SEARCH_WORD,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.SEARCH_WORD),
-    },
-    {
-      ...COMMON_SHORTCUTS.GO_HOME,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.GO_HOME),
-    },
-    {
-      ...COMMON_SHORTCUTS.OPEN_SETTINGS,
-      keyCombo: formatKeyCombo(COMMON_SHORTCUTS.OPEN_SETTINGS),
-    },
-  ];
+  const [currentLanguage, setCurrentLanguage] = useState<Language>("zh");
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Video
-                </Button>
-              </Link>
-              <h1 className="text-xl font-semibold text-gray-900 flex items-center">
-                <HelpCircle className="w-5 h-5 mr-2" />
-                Help & Shortcuts
-              </h1>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <Navigation />
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="text-center space-y-4 mb-12">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+            {helpContent[currentLanguage].title}
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            {helpContent[currentLanguage].subtitle}
+          </p>
+
+          {/* Language Selector */}
+          <div className="flex justify-center space-x-2 mt-6">
+            {Object.keys(helpContent).map((lang) => (
+              <Button
+                key={lang}
+                variant={currentLanguage === lang ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentLanguage(lang as Language)}
+                className="min-w-[60px]"
+              >
+                {lang === "zh"
+                  ? "中文"
+                  : lang === "ja"
+                  ? "日本語"
+                  : lang === "ko"
+                  ? "한국어"
+                  : "English"}
+              </Button>
+            ))}
           </div>
         </div>
-      </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Steps */}
         <div className="space-y-8">
-          {/* Getting Started */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-4">Getting Started</h2>
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold">1</span>
+          {helpContent[currentLanguage].steps.map((step, index) => (
+            <Card
+              key={index}
+              className="overflow-hidden border-2 border-blue-100"
+            >
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl text-blue-900">
+                      {step.title}
+                    </CardTitle>
+                    <p className="text-blue-700 mt-2">{step.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium">Upload a Video</h3>
-                  <p className="text-gray-600 text-sm">
-                    Click the upload area on the homepage and select a video
-                    file. Supported formats: MP4, AVI, MOV, MKV, and more.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold">2</span>
-                </div>
-                <div>
-                  <h3 className="font-medium">Choose Language</h3>
-                  <p className="text-gray-600 text-sm">
-                    Select the language of your video for accurate subtitle
-                    generation.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold">3</span>
-                </div>
-                <div>
-                  <h3 className="font-medium">Wait for Processing</h3>
-                  <p className="text-gray-600 text-sm">
-                    The system will automatically generate subtitles using
-                    speech recognition. This may take a few minutes depending on
-                    video length.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold">4</span>
-                </div>
-                <div>
-                  <h3 className="font-medium">Start Learning</h3>
-                  <p className="text-gray-600 text-sm">
-                    Use the video player controls, subtitle list, and vocabulary
-                    features to enhance your language learning experience.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Features Overview */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-4">Features Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-start space-x-3">
-                <Video className="w-6 h-6 text-blue-600 mt-1" />
-                <div>
-                  <h3 className="font-medium">Video Player</h3>
-                  <p className="text-gray-600 text-sm">
-                    Advanced video controls with playback speed adjustment,
-                    volume control, and fullscreen support.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <BookOpen className="w-6 h-6 text-green-600 mt-1" />
-                <div>
-                  <h3 className="font-medium">Vocabulary Learning</h3>
-                  <p className="text-gray-600 text-sm">
-                    Add words to your vocabulary, look up definitions, and track
-                    your learning progress.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Settings className="w-6 h-6 text-purple-600 mt-1" />
-                <div>
-                  <h3 className="font-medium">Data Management</h3>
-                  <p className="text-gray-600 text-sm">
-                    Backup and restore your data, manage storage, and sync
-                    across devices.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Keyboard className="w-6 h-6 text-orange-600 mt-1" />
-                <div>
-                  <h3 className="font-medium">Keyboard Shortcuts</h3>
-                  <p className="text-gray-600 text-sm">
-                    Use keyboard shortcuts for quick access to common functions
-                    and improved workflow.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Keyboard Shortcuts */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <Keyboard className="w-5 h-5 mr-2" />
-              Keyboard Shortcuts
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Video Controls */}
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3">
-                  Video Controls
-                </h3>
-                <div className="space-y-2">
-                  {shortcuts.slice(0, 10).map((shortcut, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center py-1"
-                    >
-                      <span className="text-sm text-gray-600">
-                        {shortcut.description}
-                      </span>
-                      <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded">
-                        {shortcut.keyCombo}
-                      </kbd>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Image */}
+                  <div className="space-y-4">
+                    <div className="relative aspect-video rounded-lg overflow-hidden border-2 border-gray-200">
+                      <Image
+                        src={step.image}
+                        alt={step.title}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Learning & Navigation */}
-              <div>
-                <h3 className="font-medium text-gray-900 mb-3">
-                  Learning & Navigation
-                </h3>
-                <div className="space-y-2">
-                  {shortcuts.slice(10).map((shortcut, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center py-1"
-                    >
-                      <span className="text-sm text-gray-600">
-                        {shortcut.description}
-                      </span>
-                      <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-300 rounded">
-                        {shortcut.keyCombo}
-                      </kbd>
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <p className="text-blue-800 text-sm font-medium">
+                        {step.tips}
+                      </p>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Details */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      {currentLanguage === "zh"
+                        ? "详细步骤："
+                        : currentLanguage === "ja"
+                        ? "詳細な手順："
+                        : currentLanguage === "ko"
+                        ? "상세 단계："
+                        : "Detailed Steps:"}
+                    </h4>
+                    <ul className="space-y-3">
+                      {step.details.map((detail, detailIndex) => (
+                        <li
+                          key={detailIndex}
+                          className="flex items-start space-x-3"
+                        >
+                          <div className="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                          <span className="text-gray-700 leading-relaxed">
+                            {detail}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-          {/* Tips & Tricks */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-4">Tips & Tricks</h2>
-            <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-medium text-blue-800 mb-2">
-                  🎯 Learning Tips
-                </h3>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>
-                    • Use the playback speed controls to slow down difficult
-                    sections
-                  </li>
-                  <li>
-                    • Click on subtitles to jump to specific parts of the video
-                  </li>
-                  <li>
-                    • Add unfamiliar words to your vocabulary for later review
-                  </li>
-                  <li>
-                    • Use the search function to find specific words in
-                    subtitles
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="font-medium text-green-800 mb-2">
-                  ⚡ Performance Tips
-                </h3>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>
-                    • Keep video files under 100MB for optimal performance
-                  </li>
-                  <li>• Close unused browser tabs to free up memory</li>
-                  <li>• Use hardware acceleration when available</li>
-                  <li>• Regularly clear browser cache and storage</li>
-                </ul>
-              </div>
-
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <h3 className="font-medium text-purple-800 mb-2">
-                  🔧 Troubleshooting
-                </h3>
-                <ul className="text-sm text-purple-700 space-y-1">
-                  <li>• If video doesn't play, try refreshing the page</li>
-                  <li>• Check that your browser supports the video format</li>
-                  <li>• Ensure you have sufficient storage space</li>
-                  <li>• Contact support if you encounter persistent issues</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Support */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-4">Need Help?</h2>
-            <div className="space-y-4">
-              <p className="text-gray-600">
-                If you need additional help or encounter any issues, please:
+        {/* Quick Start CTA */}
+        <div className="mt-12 text-center">
+          <Card className="max-w-2xl mx-auto bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200">
+            <CardContent className="p-8">
+              <h3 className="text-2xl font-bold text-green-800 mb-4">
+                {currentLanguage === "zh"
+                  ? "准备开始了吗？"
+                  : currentLanguage === "ja"
+                  ? "準備はできましたか？"
+                  : currentLanguage === "ko"
+                  ? "준비되었나요？"
+                  : "Ready to Start?"}
+              </h3>
+              <p className="text-green-700 mb-6">
+                {currentLanguage === "zh"
+                  ? "现在就开始您的语言学习之旅吧！"
+                  : currentLanguage === "ja"
+                  ? "今すぐ言語学習の旅を始めましょう！"
+                  : currentLanguage === "ko"
+                  ? "지금 바로 언어 학습 여행을 시작하세요！"
+                  : "Start your language learning journey now!"}
               </p>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  <span className="text-sm">
-                    Check the troubleshooting section above
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  <span className="text-sm">
-                    Try refreshing the page or clearing browser cache
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                  <span className="text-sm">
-                    Contact our support team with detailed information
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+              <Link href="/">
+                <Button size="lg" className="bg-green-600 hover:bg-green-700">
+                  <Play className="w-5 h-5 mr-2" />
+                  {currentLanguage === "zh"
+                    ? "开始学习"
+                    : currentLanguage === "ja"
+                    ? "学習を開始"
+                    : currentLanguage === "ko"
+                    ? "학습 시작"
+                    : "Start Learning"}
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

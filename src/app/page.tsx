@@ -40,10 +40,17 @@ import { TestimonialsSection } from "@/components/testimonials-section";
 import { Footer } from "@/components/footer";
 import { Navigation } from "@/components/navigation";
 import { Plus, List } from "lucide-react";
+import React from "react";
 
 export default function HomePage() {
-  const { currentVideo, setCurrentVideo, setSubtitles, setCurrentSubtitle } =
-    useAppStore();
+  const {
+    currentVideo,
+    setCurrentVideo,
+    setSubtitles,
+    setCurrentSubtitle,
+    isLoadedFromMyList,
+    setIsLoadedFromMyList,
+  } = useAppStore();
   const router = useRouter();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -67,10 +74,34 @@ export default function HomePage() {
   );
   const [isAutoGenerating, setIsAutoGenerating] = useState(false);
 
+  // Check if current project is in My List
+  const checkMyListStatus = async () => {
+    if (!currentVideo) return;
+
+    try {
+      const existingProject = await StorageManager.getMyLearningProject(
+        currentVideo.id
+      );
+      // 如果从My List加载，或者项目已在My List中，都认为是"已添加"状态
+      return !!existingProject || isLoadedFromMyList;
+    } catch (error) {
+      console.error("Error checking My List status:", error);
+      return false;
+    }
+  };
+
+  // Check My List status when video changes
+  React.useEffect(() => {
+    checkMyListStatus();
+  }, [currentVideo]);
+
   const handleFileSelect = async (file: File, language: string) => {
     setIsProcessing(true);
 
     try {
+      // Reset My List loading state for new file
+      setIsLoadedFromMyList(false);
+
       // Create video object with consistent ID format
       const video: Video = {
         id: `api-transcript-${Date.now()}`,
@@ -418,19 +449,13 @@ export default function HomePage() {
     }
 
     try {
-      // Check if already in My List
-      const existingProject = await StorageManager.getMyLearningProject(
-        currentVideo.id
-      );
-      if (existingProject) {
-        toast.info("This project is already in your learning list");
-        return;
-      }
-
       // Get current playback position
       const currentTime = videoPlayerRef?.getCurrentTime() || 0;
 
-      // Create new learning project
+      // Check if already in My List
+      const isAlreadyInList = await checkMyListStatus();
+
+      // Create learning project data
       const learningProject = {
         videoId: currentVideo.id,
         videoName: currentVideo.name,
@@ -447,10 +472,15 @@ export default function HomePage() {
         lastAccessed: new Date(),
       };
 
-      // Save to database
+      // Save to database (this will update if exists, add if not)
       await StorageManager.saveMyLearningProject(learningProject);
 
-      toast.success("Added to My Learning List");
+      // Update local state
+      setIsLoadedFromMyList(true);
+
+      toast.success(
+        isAlreadyInList ? "My List updated" : "Added to My Learning List"
+      );
     } catch (error) {
       console.error("Failed to add to My List:", error);
       toast.error("Failed to add to My List");
@@ -501,6 +531,29 @@ export default function HomePage() {
 
   const handleAutoTranscribe = async () => {
     if (!currentVideo || !currentVideo.file) return;
+
+    // Check if API key is available
+    const apiKey = localStorage.getItem("assemblyai_api_key");
+    if (!apiKey) {
+      // Show API key setup dialog
+      const shouldSetup = confirm(
+        "How to Get Your Free API Key\n\n" +
+          "1. Visit AssemblyAI.com\n" +
+          "2. Sign up for a free account (no credit card required)\n" +
+          "3. Get $50 in free credits (approximately 50 hours of transcription)\n" +
+          "4. Go to Dashboard → API Keys\n" +
+          "5. Copy your API key and paste it in Settings\n\n" +
+          "Would you like to open AssemblyAI.com in a new tab?"
+      );
+
+      if (shouldSetup) {
+        window.open("https://www.assemblyai.com/", "_blank");
+      }
+
+      // Navigate to settings page
+      router.push("/settings");
+      return;
+    }
 
     setIsTranscribing(true);
     setTranscriptionProgress(null);
@@ -706,7 +759,7 @@ export default function HomePage() {
                   )}
 
                   {/* Subtitle Processing Section */}
-                  {!currentVideo.processed && (
+                  {!currentVideo.processed && !isLoadedFromMyList && (
                     <div className="mt-6 pt-6 border-t border-gray-200">
                       <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                         <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-3">
@@ -783,7 +836,9 @@ export default function HomePage() {
                         className="flex-1 bg-blue-600 hover:bg-blue-700"
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Add to My List
+                        {isLoadedFromMyList
+                          ? "Update My List"
+                          : "Add to My List"}
                       </Button>
                       <Button
                         onClick={handleGoToMyList}

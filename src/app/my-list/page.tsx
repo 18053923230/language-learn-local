@@ -40,7 +40,8 @@ import { subtitleStorage } from "@/lib/subtitle-storage";
 
 export default function MyListPage() {
   const router = useRouter();
-  const { setCurrentVideo, setSubtitles } = useAppStore();
+  const { setCurrentVideo, setSubtitles, setIsLoadedFromMyList } =
+    useAppStore();
   const [projects, setProjects] = useState<MyLearningProject[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<MyLearningProject[]>(
     []
@@ -171,6 +172,7 @@ export default function MyListPage() {
       const updatedVideo = {
         ...video,
         url: videoUrl,
+        processed: true, // Mark as processed since we're loading from My List
       };
 
       // Load subtitles with priority: Smart Version > Raw Version > StorageManager > SubtitleStorage
@@ -239,6 +241,7 @@ export default function MyListPage() {
       console.log("Setting subtitles:", subtitles);
       setCurrentVideo(updatedVideo);
       setSubtitles(subtitles);
+      setIsLoadedFromMyList(true); // 标记为从My List加载
 
       // Update last accessed time
       await StorageManager.updateMyLearningProject(project.videoId, {

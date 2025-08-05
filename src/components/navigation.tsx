@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { BookOpen, Download, Settings } from "lucide-react";
+import { BookOpen, Download, Settings, HelpCircle } from "lucide-react";
 import Link from "next/link";
 
 interface NavigationProps {
@@ -67,18 +67,30 @@ export function Navigation({
             )}
 
             {!title && (
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">FR</span>
+              <Link href="/">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">FR</span>
+                  </div>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                    FluentReact
+                  </h1>
                 </div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                  FluentReact
-                </h1>
-              </div>
+              </Link>
             )}
           </div>
 
           <div className="flex items-center space-x-3">
+            <Link href="/help">
+              <Button
+                variant="outline"
+                size="sm"
+                className="education-button-secondary"
+              >
+                <HelpCircle className="w-4 h-4 mr-2" />
+                How to Start?
+              </Button>
+            </Link>
             <Link href="/vocabulary">
               <Button
                 variant="outline"

@@ -520,14 +520,17 @@ export default function HomePage() {
       <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">FR</span>
+            {/* # */}
+            <Link href="/">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">FR</span>
+                </div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                  FluentReact
+                </h1>
               </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                FluentReact
-              </h1>
-            </div>
+            </Link>
             <div className="flex items-center space-x-3">
               <Link href="/vocabulary">
                 <Button
@@ -549,34 +552,14 @@ export default function HomePage() {
                   Subtitles
                 </Button>
               </Link>
-              <Link href="/how-it-works">
+              <Link href="/my-list">
                 <Button
                   variant="outline"
                   size="sm"
                   className="education-button-secondary"
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
-                  How It Works
-                </Button>
-              </Link>
-              <Link href="/language-reactor-alternative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <Search className="w-4 h-4 mr-2" />
-                  vs Language Reactor
-                </Button>
-              </Link>
-              <Link href="/faq">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  FAQ
+                  My List
                 </Button>
               </Link>
               <Link href="/blog">
@@ -587,16 +570,6 @@ export default function HomePage() {
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
                   Blog
-                </Button>
-              </Link>
-              <Link href="/my-list">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="education-button-secondary"
-                >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  My List
                 </Button>
               </Link>
               <Link href="/settings">

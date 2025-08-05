@@ -87,10 +87,10 @@ export function Footer({ className = "" }: FooterProps) {
               </li>
               <li>
                 <Link
-                  href="/how-it-works"
+                  href="/my-list"
                   className="hover:text-white transition-colors flex items-center"
                 >
-                  How It Works
+                  My Learning List
                 </Link>
               </li>
               <li>
@@ -99,22 +99,6 @@ export function Footer({ className = "" }: FooterProps) {
                   className="hover:text-white transition-colors flex items-center"
                 >
                   Blog & Tips
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/faq"
-                  className="hover:text-white transition-colors flex items-center"
-                >
-                  FAQ
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/language-reactor-alternative"
-                  className="hover:text-white transition-colors flex items-center"
-                >
-                  vs Language Reactor
                 </Link>
               </li>
               <li>

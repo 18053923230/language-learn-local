@@ -412,27 +412,62 @@ export default function HomePage() {
 
   // Add current project to My List
   const handleAddToMyList = async () => {
-    if (!currentVideo) return;
+    if (!currentVideo) {
+      toast.error("No video loaded");
+      return;
+    }
 
     try {
-      // TODO: 这里将调用My List数据库存储
-      // 保存视频路径、字幕数据、学习进度等
-      console.log("Adding to My List:", {
+      // Check if already in My List
+      const existingProject = await StorageManager.getMyLearningProject(
+        currentVideo.id
+      );
+      if (existingProject) {
+        toast.info("This project is already in your learning list");
+        return;
+      }
+
+      // Get current playback position
+      const currentTime = videoPlayerRef?.getCurrentTime() || 0;
+
+      // Create new learning project
+      const learningProject = {
         videoId: currentVideo.id,
         videoName: currentVideo.name,
-        videoPath: currentVideo.url,
+        videoPath: currentVideo.url, // For now, use URL as path
+        subtitlePath: `subtitles_${currentVideo.id}`, // Subtitle identifier
+        learningProgress: currentTime,
+        addedTime: new Date(),
+        projectName: currentVideo.name.replace(/\.[^/.]+$/, ""), // Remove file extension
+        description: `Language: ${
+          currentVideo.language
+        }, Duration: ${formatDuration(currentVideo.duration)}`,
         language: currentVideo.language,
         duration: currentVideo.duration,
-        currentTime: 0, // TODO: 获取当前播放位置
-        subtitlesCount: useAppStore.getState().subtitles.length,
-        addedAt: new Date(),
-      });
+        lastAccessed: new Date(),
+      };
 
-      toast.success("Added to My List successfully!");
+      // Save to database
+      await StorageManager.saveMyLearningProject(learningProject);
+
+      toast.success("Added to My Learning List");
     } catch (error) {
       console.error("Failed to add to My List:", error);
       toast.error("Failed to add to My List");
     }
+  };
+
+  const formatDuration = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
 
   // Navigate to My List
@@ -736,7 +771,7 @@ export default function HomePage() {
 
                 {/* My List Actions - Only show when video is loaded */}
                 {currentVideo && (
-                  <div className="education-card p-6 border-2 border-red-500">
+                  <div className="education-card p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-gray-900">
                         Learning Project Management
@@ -758,10 +793,6 @@ export default function HomePage() {
                         <List className="w-4 h-4 mr-2" />
                         Go to My List
                       </Button>
-                    </div>
-                    {/* Debug info */}
-                    <div className="mt-2 p-2 bg-yellow-100 text-xs">
-                      Debug: currentVideo exists, buttons should be visible
                     </div>
                   </div>
                 )}

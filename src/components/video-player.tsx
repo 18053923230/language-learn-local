@@ -27,6 +27,7 @@ export interface VideoPlayerRef {
   playSegment: (start: number, end: number) => void;
   play: () => void;
   pause: () => void;
+  getCurrentTime: () => number;
   segmentTimer?: NodeJS.Timeout;
   cleanupSegment?: () => void;
 }
@@ -116,6 +117,9 @@ export function VideoPlayer({
       if (videoRef.current) {
         videoRef.current.pause();
       }
+    },
+    getCurrentTime: () => {
+      return videoRef.current?.currentTime || 0;
     },
   });
 

@@ -120,8 +120,7 @@ export function SubtitleList({
             <span className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mr-3">
               <span className="text-white text-xs font-bold">📝</span>
             </span>
-            Subtitles ({subtitles.length} total){" "}
-            {/* DEBUG: Should show total count */}
+            Subtitles
           </h3>
           <div className="flex items-center space-x-2">
             {currentVideo && (

@@ -35,7 +35,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { StorageManager } from "@/lib/storage";
+import { StorageManager, MyLearningProject } from "@/lib/storage";
 import type { Video } from "@/types/video";
 import type { Subtitle } from "@/types/subtitle";
 import type { VocabularyItem } from "@/types/vocabulary";
@@ -43,22 +43,11 @@ import { toast } from "sonner";
 import { Navigation } from "@/components/navigation";
 import { BookOpen } from "lucide-react";
 
-interface LearningProject {
-  video: Video;
-  subtitles: Subtitle[];
-  lastPlayed: Date;
-  playCount: number;
-  totalDuration: number;
-  vocabularyCount: number;
-  progress: number; // 0-100
-  isFavorite: boolean;
-}
-
 export default function MyListPage() {
   const router = useRouter();
   const { setCurrentVideo, setSubtitles } = useAppStore();
-  const [projects, setProjects] = useState<LearningProject[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<LearningProject[]>(
+  const [projects, setProjects] = useState<MyLearningProject[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<MyLearningProject[]>(
     []
   );
   const [searchTerm, setSearchTerm] = useState("");
@@ -83,10 +72,10 @@ export default function MyListPage() {
     if (searchTerm) {
       filtered = filtered.filter(
         (project) =>
-          project.video.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          project.video.language
+          project.projectName
             .toLowerCase()
-            .includes(searchTerm.toLowerCase())
+            .includes(searchTerm.toLowerCase()) ||
+          project.language.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -95,16 +84,15 @@ export default function MyListPage() {
       case "recent":
         filtered = filtered.filter(
           (project) =>
-            new Date(project.lastPlayed).getTime() >
+            new Date(project.lastAccessed).getTime() >
             Date.now() - 7 * 24 * 60 * 60 * 1000
         );
         break;
-      case "favorites":
-        filtered = filtered.filter((project) => project.isFavorite);
-        break;
       case "in-progress":
         filtered = filtered.filter(
-          (project) => project.progress > 0 && project.progress < 100
+          (project) =>
+            project.learningProgress > 0 &&
+            project.learningProgress < project.duration
         );
         break;
     }
@@ -114,17 +102,21 @@ export default function MyListPage() {
       case "recent":
         filtered.sort(
           (a, b) =>
-            new Date(b.lastPlayed).getTime() - new Date(a.lastPlayed).getTime()
+            new Date(b.lastAccessed).getTime() -
+            new Date(a.lastAccessed).getTime()
         );
         break;
       case "name":
-        filtered.sort((a, b) => a.video.name.localeCompare(b.video.name));
+        filtered.sort((a, b) => a.projectName.localeCompare(b.projectName));
         break;
       case "progress":
-        filtered.sort((a, b) => b.progress - a.progress);
+        filtered.sort(
+          (a, b) =>
+            b.learningProgress / b.duration - a.learningProgress / a.duration
+        );
         break;
       case "duration":
-        filtered.sort((a, b) => b.totalDuration - a.totalDuration);
+        filtered.sort((a, b) => b.duration - a.duration);
         break;
     }
 
@@ -134,46 +126,8 @@ export default function MyListPage() {
   const loadLearningProjects = async () => {
     try {
       setIsLoading(true);
-
-      // Load videos from storage
-      const videos = await StorageManager.getAllVideos();
-      const projectsData: LearningProject[] = [];
-
-      for (const video of videos) {
-        try {
-          // Load subtitles for this video
-          const subtitles = await StorageManager.getSubtitles(video.id);
-
-          // Load play history
-          const playHistory = await StorageManager.getPlayHistory(video.id);
-
-          // Load vocabulary count - simplified for now
-          const vocabulary = await StorageManager.getAllVocabulary();
-          const videoVocabulary = vocabulary.filter((word) =>
-            word.word.toLowerCase().includes(video.name.toLowerCase())
-          );
-
-          // Calculate progress based on play history
-          const progress = playHistory
-            ? Math.min(100, (playHistory.currentTime / video.duration) * 100)
-            : 0;
-
-          projectsData.push({
-            video,
-            subtitles: subtitles || [],
-            lastPlayed: playHistory?.lastPlayed || video.uploadedAt,
-            playCount: playHistory?.playCount || 0,
-            totalDuration: video.duration,
-            vocabularyCount: videoVocabulary.length,
-            progress,
-            isFavorite: false, // TODO: Implement favorites system
-          });
-        } catch (error) {
-          console.error(`Error loading project for video ${video.id}:`, error);
-        }
-      }
-
-      setProjects(projectsData);
+      const learningProjects = await StorageManager.getAllMyLearningProjects();
+      setProjects(learningProjects);
     } catch (error) {
       console.error("Error loading learning projects:", error);
       toast.error("Failed to load learning projects");
@@ -182,31 +136,49 @@ export default function MyListPage() {
     }
   };
 
-  const handleLoadProject = async (project: LearningProject) => {
+  const handleLoadProject = async (project: MyLearningProject) => {
     try {
+      // Load video
+      const video = await StorageManager.getVideo(project.videoId);
+      if (!video) {
+        toast.error("Video not found");
+        return;
+      }
+
+      // Load subtitles
+      const subtitles = await StorageManager.getSubtitles(project.videoId);
+
       // Set current video and subtitles
-      setCurrentVideo(project.video);
-      setSubtitles(project.subtitles);
+      setCurrentVideo(video);
+      setSubtitles(subtitles);
+
+      // Update last accessed time
+      await StorageManager.updateMyLearningProject(project.videoId, {
+        lastAccessed: new Date(),
+      });
 
       // Navigate to main page
       router.push("/");
-
-      toast.success(`Loaded: ${project.video.name}`);
+      toast.success("Project loaded successfully");
     } catch (error) {
       console.error("Error loading project:", error);
       toast.error("Failed to load project");
     }
   };
 
-  const handleDeleteProject = async (project: LearningProject) => {
+  const handleDeleteProject = async (project: MyLearningProject) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${project.projectName}" from your learning list?`
+      )
+    ) {
+      return;
+    }
+
     try {
-      // Remove from storage
-      await StorageManager.deleteVideo(project.video.id);
-
-      // Update local state
-      setProjects(projects.filter((p) => p.video.id !== project.video.id));
-
-      toast.success("Project deleted successfully");
+      await StorageManager.deleteMyLearningProject(project.videoId);
+      await loadLearningProjects(); // Reload the list
+      toast.success("Project removed from learning list");
     } catch (error) {
       console.error("Error deleting project:", error);
       toast.error("Failed to delete project");
@@ -219,23 +191,24 @@ export default function MyListPage() {
     const secs = Math.floor(seconds % 60);
 
     if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${secs}s`;
-    } else {
-      return `${secs}s`;
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}`;
     }
+    return `${minutes}:${secs.toString().padStart(2, "0")}`;
   };
 
   const formatDate = (date: Date): string => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
-    if (days === 0) return "Today";
-    if (days === 1) return "Yesterday";
-    if (days < 7) return `${days} days ago`;
-    return date.toLocaleDateString();
+  const getProgressPercentage = (project: MyLearningProject): number => {
+    if (project.duration === 0) return 0;
+    return Math.round((project.learningProgress / project.duration) * 100);
   };
 
   return (
@@ -287,7 +260,10 @@ export default function MyListPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">
-                    {projects.filter((p) => p.progress > 0).length}
+                    {
+                      projects.filter((p) => getProgressPercentage(p) > 0)
+                        .length
+                    }
                   </p>
                   <p className="text-sm text-gray-600">In Progress</p>
                 </div>
@@ -320,7 +296,7 @@ export default function MyListPage() {
                 <div>
                   <p className="text-2xl font-bold text-gray-900">
                     {formatDuration(
-                      projects.reduce((sum, p) => sum + p.totalDuration, 0)
+                      projects.reduce((sum, p) => sum + p.duration, 0)
                     )}
                   </p>
                   <p className="text-sm text-gray-600">Total Duration</p>
@@ -359,13 +335,6 @@ export default function MyListPage() {
                 onClick={() => setFilter("recent")}
               >
                 Recent
-              </Button>
-              <Button
-                variant={filter === "favorites" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilter("favorites")}
-              >
-                Favorites
               </Button>
               <Button
                 variant={filter === "in-progress" ? "default" : "outline"}
@@ -421,22 +390,20 @@ export default function MyListPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProjects.map((project) => (
               <Card
-                key={project.video.id}
+                key={project.videoId}
                 className="bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all duration-300 group"
               >
                 <CardHeader className="pb-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg font-semibold text-gray-900 truncate">
-                        {project.video.name}
+                        {project.projectName}
                       </CardTitle>
                       <CardDescription className="flex items-center space-x-2 mt-2">
                         <Languages className="w-4 h-4" />
-                        <span className="capitalize">
-                          {project.video.language}
-                        </span>
+                        <span className="capitalize">{project.language}</span>
                         <span>•</span>
-                        <span>{formatDuration(project.totalDuration)}</span>
+                        <span>{formatDuration(project.duration)}</span>
                       </CardDescription>
                     </div>
                     <div className="flex items-center space-x-1">
@@ -465,12 +432,12 @@ export default function MyListPage() {
                   <div>
                     <div className="flex justify-between text-sm text-gray-600 mb-1">
                       <span>Progress</span>
-                      <span>{Math.round(project.progress)}%</span>
+                      <span>{getProgressPercentage(project)}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${project.progress}%` }}
+                        style={{ width: `${getProgressPercentage(project)}%` }}
                       ></div>
                     </div>
                   </div>
@@ -491,7 +458,7 @@ export default function MyListPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <CalendarDays className="w-4 h-4 text-orange-500" />
-                      <span>{formatDate(project.lastPlayed)}</span>
+                      <span>{formatDate(project.lastAccessed)}</span>
                     </div>
                   </div>
 
@@ -509,7 +476,7 @@ export default function MyListPage() {
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        router.push(`/subtitles?video=${project.video.id}`)
+                        router.push(`/subtitles?video=${project.videoId}`)
                       }
                     >
                       <Download className="w-4 h-4" />

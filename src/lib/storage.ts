@@ -14,6 +14,22 @@ export interface PlayHistory {
   playCount: number;
 }
 
+// My List学习项目接口
+export interface MyLearningProject {
+  id?: number;
+  videoId: string;
+  videoName: string;
+  videoPath: string; // 视频文件的物理路径
+  subtitlePath: string; // 字幕数据的路径或标识
+  learningProgress: number; // 播放位置（秒）
+  addedTime: Date; // 添加到列表的时间
+  projectName: string; // 项目名称（主文件名）
+  description?: string; // 项目描述
+  language: string; // 视频语言
+  duration: number; // 视频总时长
+  lastAccessed: Date; // 最后访问时间
+}
+
 // 视频缓存接口
 export interface VideoCache {
   id?: number;
@@ -43,6 +59,7 @@ export class LanguageLearningDB extends Dexie {
   playHistory!: Table<PlayHistory>;
   videoCache!: Table<VideoCache>;
   settings!: Table<UserSettings>;
+  myLearningProjects!: Table<MyLearningProject>;
 
   constructor() {
     super("LanguageLearningDB");
@@ -54,6 +71,7 @@ export class LanguageLearningDB extends Dexie {
       playHistory: "++id, videoId, lastPlayed",
       videoCache: "++id, videoId, cachedAt",
       settings: "++id, key",
+      myLearningProjects: "++id, videoId, addedTime, lastAccessed",
     });
   }
 }
@@ -199,6 +217,51 @@ export class StorageManager {
 
   static async getAllSettings(): Promise<UserSettings[]> {
     return await db.settings.toArray();
+  }
+
+  // My List学习项目相关
+  static async saveMyLearningProject(
+    project: MyLearningProject
+  ): Promise<void> {
+    await db.myLearningProjects.put(project);
+  }
+
+  static async getMyLearningProject(
+    videoId: string
+  ): Promise<MyLearningProject | undefined> {
+    return await db.myLearningProjects.where("videoId").equals(videoId).first();
+  }
+
+  static async getAllMyLearningProjects(): Promise<MyLearningProject[]> {
+    return await db.myLearningProjects
+      .orderBy("lastAccessed")
+      .reverse()
+      .toArray();
+  }
+
+  static async updateMyLearningProject(
+    videoId: string,
+    updates: Partial<MyLearningProject>
+  ): Promise<void> {
+    const project = await this.getMyLearningProject(videoId);
+    if (project) {
+      await db.myLearningProjects.put({
+        ...project,
+        ...updates,
+        lastAccessed: new Date(),
+      });
+    }
+  }
+
+  static async deleteMyLearningProject(videoId: string): Promise<void> {
+    await db.myLearningProjects.where("videoId").equals(videoId).delete();
+  }
+
+  static async updateLearningProgress(
+    videoId: string,
+    progress: number
+  ): Promise<void> {
+    await this.updateMyLearningProject(videoId, { learningProgress: progress });
   }
 
   // 数据导出

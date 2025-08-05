@@ -103,7 +103,7 @@ export function SubtitleSaveButton({
   const getButtonText = () => {
     if (isSaving) return "Saving...";
     if (isSaved) return "Saved";
-    if (hasExistingRecord) return "Update Subtitles";
+    if (hasExistingRecord) return "Update";
     return "Save Subtitles";
   };
 

@@ -26,6 +26,7 @@ const LANGUAGES = [
   { code: "it", name: "Italiano" },
   { code: "pt", name: "Português" },
   { code: "ru", name: "Русский" },
+  { code: "others", name: "Others" },
 ];
 
 interface FileUploadProps {

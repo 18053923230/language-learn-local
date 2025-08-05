@@ -18,7 +18,15 @@ import {
   Upload,
 } from "lucide-react";
 
-export function VocabularyLearning() {
+interface VocabularyLearningProps {
+  isEnglishVideo?: boolean;
+  currentLanguage?: string;
+}
+
+export function VocabularyLearning({
+  isEnglishVideo = true,
+  currentLanguage = "en",
+}: VocabularyLearningProps) {
   const {
     vocabulary,
     loading,

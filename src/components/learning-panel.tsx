@@ -25,11 +25,15 @@ import { DictionaryAPI } from "@/lib/dictionary-api";
 interface LearningPanelProps {
   onPlaySegment?: (start: number, end: number) => void;
   onAddToVocabulary?: (word: string, context: string) => void;
+  isEnglishVideo?: boolean;
+  currentLanguage?: string;
 }
 
 export function LearningPanel({
   onPlaySegment,
   onAddToVocabulary,
+  isEnglishVideo = true,
+  currentLanguage = "en",
 }: LearningPanelProps) {
   const { currentSubtitle, playerState, vocabulary } = useAppStore();
   const [selectedWord, setSelectedWord] = useState<string>("");
@@ -49,6 +53,11 @@ export function LearningPanel({
   const repeatTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleWordClick = (word: string) => {
+    // 非英语视频完全禁用词典功能
+    if (!isEnglishVideo) {
+      return;
+    }
+
     // Clean the word by removing punctuation marks
     const cleanWord = word.replace(/[.,!?;:'"()[\]{}]/g, "").trim();
 
@@ -61,15 +70,16 @@ export function LearningPanel({
     setIsLoadingWord(true);
   };
 
-  // 获取单词数据
+  // 获取单词数据（仅英语视频）
   useEffect(() => {
     const fetchWordData = async () => {
-      if (!selectedWord) {
+      if (!selectedWord || !isEnglishVideo) {
         setWordData(null);
         setIsLoadingWord(false);
         return;
       }
 
+      // 仅英语视频使用词典API
       try {
         setIsLoadingWord(true);
         const entries = await DictionaryAPI.lookupWord(selectedWord);
@@ -103,7 +113,7 @@ export function LearningPanel({
     };
 
     fetchWordData();
-  }, [selectedWord]);
+  }, [selectedWord, isEnglishVideo]);
 
   const handlePlaySegment = () => {
     if (currentSubtitle && onPlaySegment) {
@@ -340,15 +350,9 @@ export function LearningPanel({
           </div>
         </div>
 
-        {/* Word Learning */}
-        {selectedWord && (
+        {/* Word Learning - Only for English videos */}
+        {selectedWord && isEnglishVideo && (
           <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
-            {/* <h4 className="text-lg font-semibold text-gray-800 flex items-center mb-3">
-              <span className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center mr-2">
-                <span className="text-purple-600 text-xs">📚</span>
-              </span>
-              Word Learning
-            </h4> */}
             <div className="space-y-3">
               <div className="bg-white p-4 rounded-lg border border-purple-200">
                 <div className="flex items-center justify-between mb-3">
@@ -436,6 +440,27 @@ export function LearningPanel({
                 <Plus className="w-4 h-4 mr-2" />
                 Add to Vocabulary
               </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Non-English Video Notice */}
+        {!isEnglishVideo && (
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+            <div className="flex items-start">
+              <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                <span className="text-blue-600 text-xs font-bold">ℹ</span>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-blue-800">
+                  Dictionary Feature
+                </h4>
+                <p className="text-xs text-blue-700 mt-1">
+                  Dictionary lookup is only available for English videos. For{" "}
+                  {currentLanguage} videos, please use external translation
+                  tools.
+                </p>
+              </div>
             </div>
           </div>
         )}

@@ -1,61 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/file-upload";
 import { VideoPlayer, VideoPlayerRef } from "@/components/video-player";
 import { SubtitleList } from "@/components/subtitle-list";
 import { LearningPanel } from "@/components/learning-panel";
-
+import { VocabularyLearning } from "@/components/vocabulary-learning";
 import { SubtitleProcessor } from "@/components/subtitle-processor";
-import { useAppStore } from "@/lib/store";
-import { StorageManager } from "@/lib/storage";
-import { assemblyAIService } from "@/lib/assemblyai-service";
-import { subtitleStorage, SubtitleRecord } from "@/lib/subtitle-storage";
-import { rawTranscriptionStorage } from "@/lib/raw-transcription-storage";
-import { subtitleVersionStorage } from "@/lib/subtitle-version-storage";
-import { useVocabulary } from "@/hooks/use-vocabulary";
-import { Video } from "@/types/video";
-import { useRouter } from "next/navigation";
-import { Subtitle } from "@/types/subtitle";
-import { SubtitleVersion } from "@/types/subtitle-version";
-import { Button } from "@/components/ui/button";
-import {
-  BookOpen,
-  Settings,
-  Download,
-  Search,
-  Video as VideoIcon,
-  HardDrive,
-  Zap,
-  FolderOpen,
-  Smartphone,
-} from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
 import { SubtitleDetectionDialog } from "@/components/subtitle-detection-dialog";
 import { SubtitleVersionDialog } from "@/components/subtitle-version-dialog";
-import { VerticalVideoGeneratorButton } from "@/components/vertical-video-generator-button";
+import { SubtitleVersionSelector } from "@/components/subtitle-version-selector";
+import { Navigation } from "@/components/navigation";
 import { TutorialSection } from "@/components/tutorial-section";
 import { TestimonialsSection } from "@/components/testimonials-section";
 import { Footer } from "@/components/footer";
-import { Navigation } from "@/components/navigation";
+import { useAppStore } from "@/lib/store";
+import { StorageManager } from "@/lib/storage";
+import { AssemblyAIService } from "@/lib/assemblyai-service";
+import { subtitleStorage, SubtitleRecord } from "@/lib/subtitle-storage";
+import { SubtitleVersionStorage } from "@/lib/subtitle-version-storage";
+import { RawTranscriptionStorage } from "@/lib/raw-transcription-storage";
+import { VideoStorageService } from "@/lib/video-storage";
+import { Video } from "@/types/video";
+import { Subtitle } from "@/types/subtitle";
+import { SubtitleVersion } from "@/types/subtitle-version";
+import { translationService } from "@/lib/translation-service";
 import { Plus, List } from "lucide-react";
-import React from "react";
+import Link from "next/link";
 
 export default function HomePage() {
+  const router = useRouter();
   const {
     currentVideo,
+    subtitles,
+    currentSubtitle,
+    vocabulary,
+    isProcessing,
+    language,
+    playerState,
+    isLoadedFromMyList,
     setCurrentVideo,
     setSubtitles,
     setCurrentSubtitle,
-    isLoadedFromMyList,
+    setVocabulary,
+    setProcessing,
+    setLanguage,
+    setPlayerState,
     setIsLoadedFromMyList,
   } = useAppStore();
-  const router = useRouter();
 
-  const [isProcessing, setIsProcessing] = useState(false);
+  // Language detection
+  const isEnglishVideo = currentVideo?.language === "en";
+  const isNonEnglishVideo =
+    currentVideo?.language && currentVideo.language !== "en";
+
+  // State for transcription and processing
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcriptionProgress, setTranscriptionProgress] = useState<any>(null);
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
+  const [hasRawData, setHasRawData] = useState(false);
+  const [showNonEnglishNotice, setShowNonEnglishNotice] = useState(false);
+
+  // Initialize services
+  const assemblyAIService = new AssemblyAIService();
+  const subtitleVersionStorage = new SubtitleVersionStorage();
+  const rawTranscriptionStorage = new RawTranscriptionStorage();
+
   const [videoPlayerRef, setVideoPlayerRef] = useState<VideoPlayerRef | null>(
     null
   );
@@ -64,7 +77,6 @@ export default function HomePage() {
   );
   const [isDetectionDialogOpen, setIsDetectionDialogOpen] = useState(false);
   const [isExactMatch, setIsExactMatch] = useState(false);
-  const [hasRawData, setHasRawData] = useState(false);
   const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
   const [availableVersions, setAvailableVersions] = useState<SubtitleVersion[]>(
     []
@@ -72,7 +84,6 @@ export default function HomePage() {
   const [currentVersion, setCurrentVersion] = useState<SubtitleVersion | null>(
     null
   );
-  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
 
   // Check if current project is in My List
   const checkMyListStatus = async () => {
@@ -91,12 +102,12 @@ export default function HomePage() {
   };
 
   // Check My List status when video changes
-  React.useEffect(() => {
+  useEffect(() => {
     checkMyListStatus();
   }, [currentVideo]);
 
   const handleFileSelect = async (file: File, language: string) => {
-    setIsProcessing(true);
+    setProcessing(true);
 
     try {
       // Reset My List loading state for new file
@@ -184,7 +195,7 @@ export default function HomePage() {
         setCurrentVideo({ ...currentVideo, processed: false });
       }
     } finally {
-      setIsProcessing(false);
+      setProcessing(false);
     }
   };
 
@@ -429,12 +440,22 @@ export default function HomePage() {
     }
   };
 
-  // 使用 useVocabulary hook
-  const { addWord } = useVocabulary();
-
   const handleAddToVocabulary = async (word: string) => {
     try {
-      await addWord(word);
+      // Add word to vocabulary using store
+      const newVocabularyItem = {
+        id: `vocab-${Date.now()}`,
+        word,
+        definition: "",
+        partOfSpeech: "",
+        language: currentVideo?.language || "en",
+        addedAt: new Date(),
+        reviewCount: 0,
+        difficulty: "medium" as const,
+        notes: "",
+      };
+
+      setVocabulary([...vocabulary, newVocabularyItem]);
       console.log("Successfully added word to vocabulary:", word);
     } catch (error) {
       console.error("Failed to add word to vocabulary:", error);
@@ -524,6 +545,20 @@ export default function HomePage() {
       console.log(
         "Subtitles loaded, you can click the save button to save them to local database"
       );
+
+      // 非英语视频的保存提醒
+      if (isNonEnglishVideo) {
+        toast.success(
+          "Subtitles loaded successfully! Click 'Save Subtitles' to store them for future use.",
+          {
+            duration: 5000,
+            action: {
+              label: "Save Now",
+              onClick: () => handleAddToMyList(),
+            },
+          }
+        );
+      }
     } catch (error) {
       console.error("Error saving subtitles:", error);
     }
@@ -758,7 +793,31 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  {/* Subtitle Processing Section */}
+                  {/* Non-English Video Notice */}
+                  {isNonEnglishVideo && (
+                    <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="flex items-start">
+                        <div className="w-5 h-5 bg-yellow-100 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                          <span className="text-yellow-600 text-xs font-bold">
+                            !
+                          </span>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-yellow-800">
+                            Non-English Video Detected
+                          </h4>
+                          <p className="text-xs text-yellow-700 mt-1">
+                            Auto transcription is only available for English
+                            videos. Please upload your subtitle file manually.
+                            After uploading, click "Save" to store subtitles for
+                            future use.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Subtitle Processing Section - Only for English videos or when not loaded from My List */}
                   {!currentVideo.processed && !isLoadedFromMyList && (
                     <div className="mt-6 pt-6 border-t border-gray-200">
                       <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -773,9 +832,12 @@ export default function HomePage() {
                         videoId={currentVideo.id}
                         language={currentVideo.language}
                         onSubtitlesLoaded={handleSubtitlesLoaded}
-                        onAutoTranscribe={handleAutoTranscribe}
+                        onAutoTranscribe={
+                          isEnglishVideo ? handleAutoTranscribe : undefined
+                        }
                         isTranscribing={isTranscribing}
                         hasRawData={hasRawData}
+                        showAutoTranscribe={isEnglishVideo}
                       />
                     </div>
                   )}
@@ -819,6 +881,8 @@ export default function HomePage() {
                   <LearningPanel
                     onPlaySegment={handlePlaySegment}
                     onAddToVocabulary={handleAddToVocabulary}
+                    isEnglishVideo={isEnglishVideo}
+                    currentLanguage={currentVideo?.language || "en"}
                   />
                 </div>
 

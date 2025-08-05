@@ -1,413 +1,857 @@
 "use client";
 
 import { useState } from "react";
+import { FileUpload } from "@/components/file-upload";
+import { VideoPlayer, VideoPlayerRef } from "@/components/video-player";
+import { SubtitleList } from "@/components/subtitle-list";
+import { LearningPanel } from "@/components/learning-panel";
+
+import { SubtitleProcessor } from "@/components/subtitle-processor";
+import { useAppStore } from "@/lib/store";
+import { StorageManager } from "@/lib/storage";
+import { assemblyAIService } from "@/lib/assemblyai-service";
+import { subtitleStorage, SubtitleRecord } from "@/lib/subtitle-storage";
+import { rawTranscriptionStorage } from "@/lib/raw-transcription-storage";
+import { subtitleVersionStorage } from "@/lib/subtitle-version-storage";
+import { useVocabulary } from "@/hooks/use-vocabulary";
+import { Video } from "@/types/video";
+import { Subtitle } from "@/types/subtitle";
+import { SubtitleVersion } from "@/types/subtitle-version";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Play,
-  Upload,
-  Globe,
-  Shield,
-  Zap,
-  Star,
-  Users,
-  Clock,
-  CheckCircle,
-  ArrowRight,
-  Quote,
-  Video,
-  Headphones,
   BookOpen,
-  Target,
-  Award,
-  TrendingUp,
-  Lock,
-  Sparkles,
-  Heart,
+  Settings,
+  Download,
+  Search,
+  Video as VideoIcon,
+  HardDrive,
+  Zap,
+  FolderOpen,
+  Smartphone,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
+import { SubtitleDetectionDialog } from "@/components/subtitle-detection-dialog";
+import { SubtitleVersionDialog } from "@/components/subtitle-version-dialog";
+import { VerticalVideoGeneratorButton } from "@/components/vertical-video-generator-button";
+import { TutorialSection } from "@/components/tutorial-section";
+import { TestimonialsSection } from "@/components/testimonials-section";
 import { Footer } from "@/components/footer";
-import { HeroSection } from "@/components/hero-section";
-import { UploadSection } from "@/components/upload-section";
-
-// Testimonials in different languages
-const testimonials = [
-  {
-    name: "Sarah Johnson",
-    role: "English Teacher",
-    location: "New York, USA",
-    content:
-      "FluentReact has transformed how I teach English. My students can now learn from any video content they love, making language learning truly engaging and effective.",
-    rating: 5,
-    language: "en",
-  },
-  {
-    name: "田中 美咲",
-    role: "Language Student",
-    location: "Tokyo, Japan",
-    content:
-      "FluentReactのおかげで、好きな動画で英語を学べるようになりました。字幕をクリックして発音を練習できるのが最高です！",
-    rating: 5,
-    language: "ja",
-  },
-  {
-    name: "Kim Min-seok",
-    role: "Software Developer",
-    location: "Seoul, South Korea",
-    content:
-      "FluentReact은 제가 본 최고의 언어 학습 도구입니다. 개인 비디오 파일로 학습할 수 있어서 정말 유용해요.",
-    rating: 5,
-    language: "ko",
-  },
-  {
-    name: "Maria Rodriguez",
-    role: "University Student",
-    location: "Madrid, Spain",
-    content:
-      "FluentReact me ha ayudado a mejorar mi inglés de manera increíble. Puedo aprender con cualquier video que me guste, ¡es fantástico!",
-    rating: 5,
-    language: "es",
-  },
-];
-
-// Features with icons and descriptions
-const features = [
-  {
-    icon: Video,
-    title: "Any Video File",
-    description:
-      "Upload your own videos, movies, or online courses. No platform restrictions.",
-    color: "text-blue-600",
-  },
-  {
-    icon: Headphones,
-    title: "Interactive Subtitles",
-    description:
-      "Click any subtitle to play, loop, and practice pronunciation instantly.",
-    color: "text-green-600",
-  },
-  {
-    icon: BookOpen,
-    title: "Smart Vocabulary",
-    description:
-      "Build your personal vocabulary from real conversations and contexts.",
-    color: "text-purple-600",
-  },
-  {
-    icon: Shield,
-    title: "100% Private",
-    description:
-      "All processing happens locally on your device. Your data never leaves your computer.",
-    color: "text-red-600",
-  },
-  {
-    icon: Zap,
-    title: "Lightning Fast",
-    description:
-      "No uploads, no waiting. Process videos instantly with local AI.",
-    color: "text-yellow-600",
-  },
-  {
-    icon: Globe,
-    title: "Works Offline",
-    description: "Learn anywhere, even without internet connection.",
-    color: "text-indigo-600",
-  },
-];
-
-// Comparison with Language Reactor
-const comparisonData = [
-  {
-    feature: "Video Sources",
-    fluentreact: "Any video file",
-    languageReactor: "Netflix & YouTube only",
-    winner: "fluentreact",
-  },
-  {
-    feature: "Privacy",
-    fluentreact: "100% local processing",
-    languageReactor: "Cloud-based",
-    winner: "fluentreact",
-  },
-  {
-    feature: "Offline Support",
-    fluentreact: "Full offline support",
-    languageReactor: "Requires internet",
-    winner: "fluentreact",
-  },
-  {
-    feature: "Cost",
-    fluentreact: "Free",
-    languageReactor: "$5/month",
-    winner: "fluentreact",
-  },
-  {
-    feature: "Setup",
-    fluentreact: "No installation",
-    languageReactor: "Browser extension",
-    winner: "fluentreact",
-  },
-];
-
-// Stats
-const stats = [
-  { number: "50,000+", label: "Videos Processed", icon: Video },
-  { number: "10,000+", label: "Active Learners", icon: Users },
-  { number: "99.9%", label: "Privacy Guaranteed", icon: Shield },
-  { number: "24/7", label: "Available Offline", icon: Clock },
-];
 
 export default function HomePage() {
-  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const { currentVideo, setCurrentVideo, setSubtitles, setCurrentSubtitle } =
+    useAppStore();
 
-  // Auto-rotate testimonials
-  useState(() => {
-    const interval = setInterval(() => {
-      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcriptionProgress, setTranscriptionProgress] = useState<any>(null);
+  const [videoPlayerRef, setVideoPlayerRef] = useState<VideoPlayerRef | null>(
+    null
+  );
+  const [detectedRecord, setDetectedRecord] = useState<SubtitleRecord | null>(
+    null
+  );
+  const [isDetectionDialogOpen, setIsDetectionDialogOpen] = useState(false);
+  const [isExactMatch, setIsExactMatch] = useState(false);
+  const [hasRawData, setHasRawData] = useState(false);
+  const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
+  const [availableVersions, setAvailableVersions] = useState<SubtitleVersion[]>(
+    []
+  );
+  const [currentVersion, setCurrentVersion] = useState<SubtitleVersion | null>(
+    null
+  );
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false);
 
-  const handleFileUpload = (file: File) => {
-    // Handle file upload logic here
-    console.log("File uploaded:", file.name);
-    // The navigation will be handled in the component
+  const handleFileSelect = async (file: File, language: string) => {
+    setIsProcessing(true);
+
+    try {
+      // Create video object with consistent ID format
+      const video: Video = {
+        id: `api-transcript-${Date.now()}`,
+        name: file.name,
+        url: URL.createObjectURL(file),
+        duration: 0, // Will be set when video loads
+        size: file.size,
+        format: file.name.split(".").pop() || "",
+        language,
+        uploadedAt: new Date(),
+        processed: false,
+      };
+
+      setCurrentVideo(video);
+
+      // Save video to local storage first
+      await StorageManager.saveVideo(video);
+      await StorageManager.saveVideoCache({
+        videoId: video.id,
+        videoName: video.name,
+        url: video.url,
+        size: video.size,
+        format: video.format,
+        language: video.language,
+        cachedAt: new Date(),
+        lastAccessed: new Date(),
+      });
+
+      // 保存视频文件到项目目录
+      let videoFileSaved = false;
+      try {
+        const { videoStorageService } = await import("@/lib/video-storage");
+        await videoStorageService.saveVideoFile(file, video.id, {
+          duration: video.duration,
+        });
+        console.log(`Video file saved to project directory: ${video.id}`);
+        videoFileSaved = true;
+      } catch (error) {
+        console.error("Error saving video file:", error);
+        toast.error(
+          "Failed to save video file. Video generation may not work properly."
+        );
+        // 即使保存失败，也继续处理视频
+      }
+
+      // Store the file for later transcription
+      setCurrentVideo({ ...video, file });
+
+      // Check for existing subtitle records and raw data
+      await checkForExistingSubtitles(video);
+      await checkForExistingRawData(video);
+
+      // 检查是否有现有字幕版本
+      const hasExistingVersions = await checkForExistingVersions(video);
+
+      // 如果有原始数据但没有字幕版本，自动生成智能分段字幕
+      if (hasRawData && !hasExistingVersions) {
+        console.log(
+          "Raw data exists but no subtitle versions found, auto generating..."
+        );
+        console.log("Video info:", {
+          id: video.id,
+          name: video.name,
+          size: video.size,
+          language: video.language,
+        });
+        await autoGenerateSmartSubtitle(video);
+      } else {
+        console.log("Auto generation conditions not met:", {
+          hasRawData,
+          hasExistingVersions,
+          videoId: video.id,
+        });
+      }
+    } catch (error) {
+      console.error("Error processing video:", error);
+      // If processing fails, still show the video but without subtitles
+      const currentVideo = useAppStore.getState().currentVideo;
+      if (currentVideo) {
+        setCurrentVideo({ ...currentVideo, processed: false });
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Check for existing subtitle records
+  const checkForExistingSubtitles = async (video: Video) => {
+    try {
+      // Check for exact video match first
+      const existingRecord = await subtitleStorage.getSubtitleRecordByVideoId(
+        video.id
+      );
+
+      if (existingRecord) {
+        // Found exact match, show dialog
+        setDetectedRecord(existingRecord);
+        setIsExactMatch(true);
+        setIsDetectionDialogOpen(true);
+        return;
+      }
+
+      // Check for similar video (same hash)
+      const similarRecord = await subtitleStorage.hasSimilarVideoRecord(video);
+
+      if (similarRecord) {
+        // Found similar video, show dialog
+        setDetectedRecord(similarRecord);
+        setIsExactMatch(false);
+        setIsDetectionDialogOpen(true);
+      }
+    } catch (error) {
+      console.error("Error checking for existing subtitles:", error);
+    }
+  };
+
+  // Check for existing raw data
+  const checkForExistingRawData = async (video: Video) => {
+    try {
+      // Check for exact video match first
+      const existingRawData = await rawTranscriptionStorage.getRawData(
+        video.id
+      );
+
+      if (existingRawData) {
+        setHasRawData(true);
+        console.log("Found existing raw data for video:", video.id);
+        return;
+      }
+
+      // Check all raw data for similar videos (by file name and size)
+      const allRawData = await rawTranscriptionStorage.getAllRawData();
+
+      const similarRawData = allRawData.find((rawData) => {
+        // 基于文件名和大小的精确匹配
+        return (
+          rawData.metadata.fileName === video.name &&
+          rawData.metadata.fileSize === video.size &&
+          rawData.language === video.language
+        );
+      });
+
+      if (similarRawData) {
+        setHasRawData(true);
+        console.log(
+          "Found similar raw data for video:",
+          video.id,
+          "matching:",
+          similarRawData.videoId
+        );
+        return;
+      }
+
+      // If no raw data found, ensure the state is false
+      setHasRawData(false);
+    } catch (error) {
+      console.error("Error checking for existing raw data:", error);
+      setHasRawData(false);
+    }
+  };
+
+  // Check for existing subtitle versions
+  const checkForExistingVersions = async (video: Video) => {
+    try {
+      const versions = await subtitleVersionStorage.getVersionsByVideoId(
+        video.id
+      );
+
+      if (versions.length > 0) {
+        setAvailableVersions(versions);
+
+        // 找到默认版本或第一个版本
+        const defaultVersion = versions.find((v) => v.isDefault) || versions[0];
+        setCurrentVersion(defaultVersion);
+
+        // 如果有多个版本，显示选择对话框
+        if (versions.length > 1) {
+          setIsVersionDialogOpen(true);
+        } else {
+          // 只有一个版本，直接加载
+          setSubtitles(defaultVersion.subtitles);
+        }
+
+        console.log("Found existing subtitle versions for video:", video.id);
+        return true; // 表示找到了现有版本
+      }
+
+      return false; // 表示没有找到现有版本
+    } catch (error) {
+      console.error("Error checking for existing versions:", error);
+      return false;
+    }
+  };
+
+  // Handle loading subtitles from detected record
+  const handleLoadDetectedSubtitles = async () => {
+    if (!detectedRecord || !currentVideo) return;
+
+    try {
+      setSubtitles(detectedRecord.subtitles);
+      setCurrentVideo({ ...currentVideo, processed: true });
+
+      // If it's not an exact match, update the video ID
+      if (!isExactMatch) {
+        await subtitleStorage.updateVideoId(detectedRecord.id, currentVideo.id);
+      }
+
+      // Check if this video has raw data
+      await checkForExistingRawData(currentVideo);
+
+      // 检查是否有现有字幕版本，如果没有但有原始数据，自动生成
+      const hasExistingVersions = await checkForExistingVersions(currentVideo);
+      if (hasRawData && !hasExistingVersions) {
+        console.log(
+          "Raw data exists but no subtitle versions found, auto generating..."
+        );
+        await autoGenerateSmartSubtitle(currentVideo);
+      }
+
+      toast.success(
+        isExactMatch
+          ? "Loaded existing subtitles"
+          : "Linked existing subtitles to current video"
+      );
+    } catch (error) {
+      console.error("Error loading subtitles:", error);
+      toast.error("Failed to load subtitles");
+    }
+  };
+
+  // Handle subtitle version selection
+  const handleSelectSubtitleVersion = (version: SubtitleVersion) => {
+    setCurrentVersion(version);
+    setSubtitles(version.subtitles);
+    setIsVersionDialogOpen(false);
+
+    toast.success(`Switched to: ${version.versionName}`);
+  };
+
+  // Auto generate smart subtitle version from raw data
+  const autoGenerateSmartSubtitle = async (video: Video) => {
+    setIsAutoGenerating(true);
+    try {
+      // 获取原始数据
+      const rawData = await rawTranscriptionStorage.getRawData(video.id);
+
+      if (!rawData) {
+        console.warn("No raw data found for auto generation");
+        return false;
+      }
+
+      // 生成智能分段字幕版本
+      const smartVersion =
+        await subtitleVersionStorage.createSmartVersionFromRawData(
+          video.id,
+          rawData
+        );
+
+      // 保存到本地存储
+      await StorageManager.saveSubtitles(smartVersion.subtitles);
+
+      // 同时保存到字幕记录存储
+      await subtitleStorage.saveSubtitleRecord(
+        video,
+        smartVersion.subtitles,
+        "assemblyai"
+      );
+
+      // 设置为当前版本和字幕
+      setCurrentVersion(smartVersion);
+      setSubtitles(smartVersion.subtitles);
+      setAvailableVersions([smartVersion]);
+
+      toast.success(
+        `Smart subtitle segments generated! ${smartVersion.subtitles.length} segments created`
+      );
+
+      console.log("Auto generated smart subtitle version:", smartVersion);
+      return true;
+    } catch (error) {
+      console.error("Error auto generating smart subtitle:", error);
+      toast.error("Failed to generate smart subtitle segments");
+      return false;
+    } finally {
+      setIsAutoGenerating(false);
+    }
+  };
+
+  const handleVideoProgress = (currentTime: number) => {
+    const subtitles = useAppStore.getState().subtitles;
+    const currentSubtitle = subtitles.find(
+      (subtitle) => currentTime >= subtitle.start && currentTime <= subtitle.end
+    );
+
+    if (currentSubtitle) {
+      setCurrentSubtitle(currentSubtitle);
+    }
+
+    if (currentVideo && Math.floor(currentTime) % 5 === 0) {
+      StorageManager.savePlayHistory({
+        videoId: currentVideo.id,
+        videoName: currentVideo.name,
+        currentTime,
+        duration: currentVideo.duration,
+        lastPlayed: new Date(),
+        playCount: 1,
+      }).catch((error) => {
+        console.error("Error saving play history:", error);
+      });
+    }
+  };
+
+  const handleDurationUpdate = (duration: number) => {
+    if (currentVideo && currentVideo.duration !== duration) {
+      const updatedVideo = { ...currentVideo, duration };
+      setCurrentVideo(updatedVideo);
+    }
+  };
+
+  const handlePlaySegment = (start: number, end: number) => {
+    if (videoPlayerRef) {
+      videoPlayerRef.playSegment(start, end);
+    } else {
+      console.log("Video player not ready, play segment:", start, end);
+    }
+  };
+
+  // 使用 useVocabulary hook
+  const { addWord } = useVocabulary();
+
+  const handleAddToVocabulary = async (word: string) => {
+    try {
+      await addWord(word);
+      console.log("Successfully added word to vocabulary:", word);
+    } catch (error) {
+      console.error("Failed to add word to vocabulary:", error);
+    }
+  };
+
+  const handleSubtitlesLoaded = async (subtitles: Subtitle[]) => {
+    if (!currentVideo) return;
+
+    try {
+      // Save subtitles to local storage
+      await StorageManager.saveSubtitles(subtitles);
+
+      // Update video as processed
+      const updatedVideo = { ...currentVideo, processed: true };
+      setCurrentVideo(updatedVideo);
+      await StorageManager.saveVideo(updatedVideo);
+
+      // Set subtitles in store
+      setSubtitles(subtitles);
+
+      // 提示用户保存字幕到本地数据库
+      console.log(
+        "Subtitles loaded, you can click the save button to save them to local database"
+      );
+    } catch (error) {
+      console.error("Error saving subtitles:", error);
+    }
+  };
+
+  const handleAutoTranscribe = async () => {
+    if (!currentVideo || !currentVideo.file) return;
+
+    setIsTranscribing(true);
+    setTranscriptionProgress(null);
+
+    try {
+      // Initialize AssemblyAI service
+      await assemblyAIService.initialize(currentVideo.language);
+
+      // Start transcription with AssemblyAI
+      const result = await assemblyAIService.transcribeAudio(
+        currentVideo.file,
+        currentVideo.id,
+        currentVideo.language,
+        (progress: any) => {
+          setTranscriptionProgress(progress);
+          console.log("AssemblyAI transcription progress:", progress);
+        }
+      );
+
+      // Save raw transcription data
+      if (result.rawData) {
+        try {
+          await rawTranscriptionStorage.saveRawData(result.rawData);
+          console.log("Raw transcription data saved successfully");
+          setHasRawData(true); // Update state after successful save
+
+          // 自动生成智能分段字幕版本
+          try {
+            const smartVersion =
+              await subtitleVersionStorage.createSmartVersionFromRawData(
+                result.rawData.videoId,
+                result.rawData
+              );
+            console.log("Smart subtitle version created:", smartVersion);
+
+            // 使用智能分段字幕作为默认显示
+            setSubtitles(smartVersion.subtitles);
+
+            // 保存到本地存储
+            await StorageManager.saveSubtitles(smartVersion.subtitles);
+
+            // 同时保存到字幕记录存储
+            await subtitleStorage.saveSubtitleRecord(
+              currentVideo,
+              smartVersion.subtitles,
+              "assemblyai"
+            );
+
+            toast.success("Smart subtitle segments generated successfully!");
+          } catch (versionError) {
+            console.error("Error creating smart version:", versionError);
+            // 如果智能版本创建失败，使用原始字幕
+            setSubtitles(result.segments);
+            await StorageManager.saveSubtitles(result.segments);
+          }
+        } catch (error) {
+          console.error("Error saving raw data:", error);
+          // Continue with subtitle processing even if raw data save fails
+          setSubtitles(result.segments);
+          await StorageManager.saveSubtitles(result.segments);
+        }
+      } else {
+        // 如果没有原始数据，使用原始字幕
+        setSubtitles(result.segments);
+        await StorageManager.saveSubtitles(result.segments);
+      }
+
+      // Update video as processed
+      const updatedVideo = { ...currentVideo, processed: true };
+      setCurrentVideo(updatedVideo);
+      await StorageManager.saveVideo(updatedVideo);
+
+      console.log("AssemblyAI transcription completed:", result);
+    } catch (error: any) {
+      console.error("Transcription error:", error);
+      // Keep video but mark as not processed
+      setCurrentVideo({ ...currentVideo, processed: false });
+    } finally {
+      setIsTranscribing(false);
+      setTranscriptionProgress(null);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Hero Section */}
-      <HeroSection onFileUpload={handleFileUpload} />
-
-      {/* Prominent Upload Section */}
-      <UploadSection onFileUpload={handleFileUpload} />
-
-      {/* Stats Section */}
-      <section className="py-16 bg-white/50 backdrop-blur-sm">
+    <div className="min-h-screen">
+      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="flex justify-center mb-3">
-                  <stat.icon className="w-8 h-8 text-blue-600" />
-                </div>
-                <div className="text-3xl font-bold text-gray-900 mb-1">
-                  {stat.number}
-                </div>
-                <div className="text-gray-600">{stat.label}</div>
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">FR</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Choose FluentReact?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              The most powerful and privacy-focused language learning tool for
-              video content
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:shadow-xl transition-shadow"
-              >
-                <CardHeader>
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center mb-4">
-                    <feature.icon className={`w-6 h-6 ${feature.color}`} />
-                  </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-gray-600 text-base">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison Section */}
-      <section className="py-20 bg-white/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              FluentReact vs Language Reactor
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              See why FluentReact is the superior choice for learning with your
-              own video content
-            </p>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="grid grid-cols-3 bg-gray-50 p-6 font-semibold text-gray-900">
-              <div>Feature</div>
-              <div className="text-center text-blue-600">FluentReact</div>
-              <div className="text-center text-gray-600">Language Reactor</div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                FluentReact
+              </h1>
             </div>
-            {comparisonData.map((item, index) => (
-              <div
-                key={index}
-                className="grid grid-cols-3 p-6 border-b border-gray-100 last:border-b-0"
-              >
-                <div className="font-medium text-gray-900">{item.feature}</div>
-                <div className="text-center">
-                  <span
-                    className={`font-medium ${
-                      item.winner === "fluentreact"
-                        ? "text-blue-600"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {item.fluentreact}
-                  </span>
-                  {item.winner === "fluentreact" && (
-                    <CheckCircle className="w-5 h-5 text-green-500 inline ml-2" />
-                  )}
-                </div>
-                <div className="text-center text-gray-600">
-                  {item.languageReactor}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <Link href="/language-reactor-alternative">
-              <Button variant="outline" size="lg">
-                View Detailed Comparison
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
+            <div className="flex items-center space-x-3">
+              <Link href="/vocabulary">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Vocabulary
+                </Button>
+              </Link>
+              <Link href="/subtitles">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Subtitles
+                </Button>
+              </Link>
+              <Link href="/how-it-works">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  How It Works
+                </Button>
+              </Link>
+              <Link href="/language-reactor-alternative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  vs Language Reactor
+                </Button>
+              </Link>
+              <Link href="/faq">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  FAQ
+                </Button>
+              </Link>
+              <Link href="/blog">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Blog
+                </Button>
+              </Link>
+              <Link href="/my-list">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="education-button-secondary"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  My List
+                </Button>
+              </Link>
+              <Link href="/settings">
+                <Button variant="ghost" size="sm" className="hover:bg-blue-50">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* Testimonials Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Loved by Language Learners Worldwide
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Join thousands of students who have transformed their language
-              learning with FluentReact
-            </p>
-          </div>
-
-          <div className="relative">
-            <div className="flex justify-center mb-8">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentTestimonial(index)}
-                  className={`w-3 h-3 rounded-full mx-1 ${
-                    index === currentTestimonial ? "bg-blue-600" : "bg-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <Card className="max-w-4xl mx-auto border-0 shadow-xl bg-white/90 backdrop-blur-sm">
-              <CardContent className="p-12 text-center">
-                <Quote className="w-12 h-12 text-blue-600 mx-auto mb-6" />
-                <p className="text-xl text-gray-700 mb-6 leading-relaxed">
-                  "{testimonials[currentTestimonial].content}"
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {!currentVideo ? (
+          // Upload Screen
+          <div className="flex flex-col items-center justify-center min-h-[600px]">
+            <div className="text-center space-y-8 relative z-10">
+              <div className="space-y-4">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                  <span className="text-white text-2xl font-bold">🎬</span>
+                </div>
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                  Master English with Any Video You Love
+                </h2>
+                <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                  Transform any video file into an interactive language learning
+                  experience. Click subtitles to play, loop sentences, and build
+                  your vocabulary naturally.
+                  <strong className="text-blue-600">
+                    {" "}
+                    All processing happens locally on your device for complete
+                    privacy.
+                  </strong>
                 </p>
-                <div className="flex justify-center mb-4">
-                  {[...Array(testimonials[currentTestimonial].rating)].map(
-                    (_, i) => (
-                      <Star
-                        key={i}
-                        className="w-5 h-5 text-yellow-400 fill-current"
+              </div>
+
+              <div className="education-card p-10 max-w-lg mx-auto">
+                <FileUpload onFileSelect={handleFileSelect} />
+              </div>
+
+              {/* Fallback processing indicator */}
+              {isProcessing && !isTranscribing && (
+                <div className="education-card p-6 max-w-md mx-auto">
+                  <div className="flex items-center space-x-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-blue-800 font-medium">
+                      Processing video...
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          // Main Learning Interface
+          <div className="space-y-8">
+            {/* Video Section */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+              {/* Video Player */}
+              <div className="col-span-1 md:col-span-8">
+                <div className="education-card overflow-hidden w-full aspect-video">
+                  <VideoPlayer
+                    url={currentVideo.url}
+                    onProgress={handleVideoProgress}
+                    onDuration={handleDurationUpdate}
+                    onRef={setVideoPlayerRef}
+                  />
+                </div>
+
+                {/* Video Info */}
+                <div className="mt-6 education-card p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 truncate">
+                    {currentVideo.name}
+                  </h3>
+                  <div className="flex items-center flex-wrap gap-4 text-sm">
+                    <span className="education-badge education-badge-info">
+                      Language: {currentVideo.language}
+                    </span>
+                    <span className="education-badge education-badge-info">
+                      Duration: {Math.floor(currentVideo.duration / 60)}m{" "}
+                      {Math.round(currentVideo.duration % 60)}s
+                    </span>
+                    <span className="education-badge education-badge-info">
+                      Size: {(currentVideo.size / 1024 / 1024).toFixed(1)} MB
+                    </span>
+                  </div>
+
+                  {/* Raw Data Status */}
+                  {/* {hasRawData && (
+                    <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-blue-600 text-xs font-bold">
+                            ✓
+                          </span>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-blue-800">
+                            Raw Data Available
+                          </h4>
+                          <p className="text-xs text-blue-600 mt-1">
+                            Original transcription data is already saved
+                            locally, no need to re-transcribe
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )} */}
+
+                  {/* Auto Generation Progress */}
+                  {isAutoGenerating && (
+                    <div className="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                      <div className="flex items-center">
+                        <div className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-purple-800">
+                            Generating Smart Subtitles
+                          </h4>
+                          <p className="text-xs text-purple-600 mt-1">
+                            Creating intelligent subtitle segments based on
+                            sentence endings
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Subtitle Processing Section */}
+                  {!currentVideo.processed && (
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <span className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-blue-600 text-xs font-bold">
+                            S
+                          </span>
+                        </span>
+                        Subtitle Processing
+                      </h4>
+                      <SubtitleProcessor
+                        videoId={currentVideo.id}
+                        language={currentVideo.language}
+                        onSubtitlesLoaded={handleSubtitlesLoaded}
+                        onAutoTranscribe={handleAutoTranscribe}
+                        isTranscribing={isTranscribing}
+                        hasRawData={hasRawData}
                       />
-                    )
+                    </div>
+                  )}
+
+                  {/* Transcription Progress */}
+                  {(isTranscribing || transcriptionProgress) && (
+                    <div className="mt-6 education-card p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                          <span className="text-blue-800 font-medium">
+                            {transcriptionProgress?.message ||
+                              "Transcribing..."}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setIsTranscribing(false);
+                            setTranscriptionProgress(null);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {transcriptionProgress && (
+                        <div className="education-progress h-3">
+                          <div
+                            className="education-progress-bar"
+                            style={{
+                              width: `${transcriptionProgress.progress}%`,
+                            }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
-                <div>
-                  <div className="font-semibold text-gray-900">
-                    {testimonials[currentTestimonial].name}
-                  </div>
-                  <div className="text-gray-600">
-                    {testimonials[currentTestimonial].role} •{" "}
-                    {testimonials[currentTestimonial].location}
-                  </div>
+                {/* Learning Panel - Below Video */}
+                <div className="education-card overflow-hidden">
+                  <LearningPanel
+                    onPlaySegment={handlePlaySegment}
+                    onAddToVocabulary={handleAddToVocabulary}
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-white mb-4">
-            Ready to Transform Your Language Learning?
-          </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Start learning with any video you love. It's free, private, and
-            works offline.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              variant="secondary"
-              className="text-lg px-8 py-4"
-              onClick={() =>
-                document.getElementById("file-upload-cta")?.click()
-              }
-            >
-              <Upload className="w-5 h-5 mr-2" />
-              Start Learning Now
-            </Button>
-            <input
-              id="file-upload-cta"
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleFileUpload(file);
-                }
-              }}
-            />
-            <Link href="/blog">
-              <Button
-                variant="outline"
-                size="lg"
-                className="text-lg px-8 py-4 border-white text-white hover:bg-white hover:text-blue-600"
-              >
-                <BookOpen className="w-5 h-5 mr-2" />
-                Read Learning Tips
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+                {/* Vertical Video Generator */}
+                {/* {currentVideo.processed && hasRawData && (
+                  <div className="mt-6 education-card overflow-hidden">
+                    <VerticalVideoGeneratorButton
+                      onVideoGenerated={(videoBlob) => {
+                        console.log("Vertical video generated:", videoBlob);
+                        toast.success("Vertical video generated successfully!");
+                      }}
+                    />
+                  </div>
+                )} */}
+              </div>
 
-      {/* Footer */}
-      <Footer />
+              {/* Subtitles Panel */}
+              <div className="col-span-1 md:col-span-4">
+                <div
+                  className="education-card overflow-hidden"
+                  style={{ height: "1200px" }}
+                >
+                  <SubtitleList
+                    onSubtitleClick={(subtitle) => setCurrentSubtitle(subtitle)}
+                    onPlaySegment={handlePlaySegment}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Subtitle Detection Dialog */}
+        {detectedRecord && (
+          <SubtitleDetectionDialog
+            isOpen={isDetectionDialogOpen}
+            onClose={() => {
+              setIsDetectionDialogOpen(false);
+              setDetectedRecord(null);
+            }}
+            onLoadSubtitles={handleLoadDetectedSubtitles}
+            record={detectedRecord}
+            isExactMatch={isExactMatch}
+          />
+        )}
+
+        {/* Subtitle Version Dialog */}
+        <SubtitleVersionDialog
+          isOpen={isVersionDialogOpen}
+          onClose={() => setIsVersionDialogOpen(false)}
+          versions={availableVersions}
+          currentVersion={currentVersion || undefined}
+          onSelectVersion={handleSelectSubtitleVersion}
+          videoName={currentVideo?.name || ""}
+        />
+      </main>
+
+      {/* Footer - Only show when no video is loaded */}
+      {!currentVideo ? (
+        <>
+          <TutorialSection />
+          <TestimonialsSection />
+          <Footer />
+        </>
+      ) : null}
     </div>
   );
 }

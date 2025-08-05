@@ -13,11 +13,20 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-export function Footer() {
+interface FooterProps {
+  className?: string;
+}
+
+export function Footer({ className = "" }: FooterProps) {
   return (
     <footer
-      className="!bg-gray-900 !text-white relative z-10"
-      style={{ background: "#111827 !important" }}
+      className={`!bg-gray-900 !text-white relative z-50 ${className}`}
+      style={{
+        background: "#111827 !important",
+        position: "relative",
+        zIndex: 50,
+        backgroundImage: "none !important",
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Main Footer Content */}
@@ -179,19 +188,15 @@ export function Footer() {
               <div className="text-sm text-gray-400">Videos Processed</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-green-400 mb-1">10K+</div>
+              <div className="text-2xl font-bold text-blue-400 mb-1">10K+</div>
               <div className="text-sm text-gray-400">Active Learners</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-purple-400 mb-1">
-                99.9%
-              </div>
+              <div className="text-2xl font-bold text-blue-400 mb-1">99.9%</div>
               <div className="text-sm text-gray-400">Privacy Guaranteed</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-yellow-400 mb-1">
-                24/7
-              </div>
+              <div className="text-2xl font-bold text-blue-400 mb-1">24/7</div>
               <div className="text-sm text-gray-400">Available Offline</div>
             </div>
           </div>

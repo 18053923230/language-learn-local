@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 // import { RawTranscriptionData } from "@/types/raw-transcription";
 
-const ASSEMBLYAI_API_KEY =
-  process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY ||
-  "2850bbdad3fa41c3b18735f524c20191";
 const ASSEMBLYAI_BASE_URL = "https://api.assemblyai.com/v2";
 
 export async function POST(request: NextRequest) {
@@ -13,6 +10,18 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const audioFile = formData.get("audio") as File;
     const language = (formData.get("language") as string) || "en";
+    const userApiKey = formData.get("apiKey") as string;
+
+    // Get API key from user input or fallback to environment variable
+    const ASSEMBLYAI_API_KEY =
+      userApiKey || process.env.NEXT_PUBLIC_ASSEMBLYAI_API_KEY;
+
+    if (!ASSEMBLYAI_API_KEY) {
+      return NextResponse.json(
+        { error: "AssemblyAI API key is required. Please set it in Settings." },
+        { status: 400 }
+      );
+    }
 
     if (!audioFile) {
       return NextResponse.json(

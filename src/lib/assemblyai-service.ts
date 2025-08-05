@@ -75,10 +75,18 @@ export class AssemblyAIService {
         message: "Uploading audio to server...",
       });
 
+      // Get API key from localStorage
+      const apiKey = localStorage.getItem("assemblyai_api_key");
+
       // Create FormData for upload
       const formData = new FormData();
       formData.append("audio", audioBlob);
       formData.append("language", language);
+
+      // Only append API key if it exists, otherwise let the server use environment variable
+      if (apiKey) {
+        formData.append("apiKey", apiKey);
+      }
 
       this.updateProgress({
         stage: "processing",
@@ -93,11 +101,29 @@ export class AssemblyAIService {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Transcription API error:", errorText);
-        throw new Error(
-          `Transcription failed: ${response.status} ${response.statusText}`
-        );
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Unknown error" }));
+        console.error("Transcription API error:", errorData);
+
+        // Handle specific error cases
+        if (response.status === 400 && errorData.error?.includes("API key")) {
+          throw new Error(
+            "AssemblyAI API key is required. Please set it in Settings."
+          );
+        } else if (response.status === 401) {
+          throw new Error(
+            "Invalid AssemblyAI API key. Please check your API key in Settings."
+          );
+        } else if (response.status === 403) {
+          throw new Error(
+            "AssemblyAI API key doesn't have required permissions."
+          );
+        } else {
+          throw new Error(
+            `Transcription failed: ${errorData.error || response.statusText}`
+          );
+        }
       }
 
       this.updateProgress({

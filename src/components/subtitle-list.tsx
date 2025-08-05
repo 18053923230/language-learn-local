@@ -126,7 +126,7 @@ export function SubtitleList({
             {currentVideo && (
               <SubtitleSaveButton video={currentVideo} subtitles={subtitles} />
             )}
-            {currentVideo && filteredSubtitles.length > 0 && (
+            {/* {currentVideo && filteredSubtitles.length > 0 && (
               <>
                 <VideoGenerationButton
                   subtitles={subtitles}
@@ -134,7 +134,7 @@ export function SubtitleList({
                   currentVideo={currentVideo}
                   searchTerm={searchTerm}
                 />
-                {/* <VideoSegmentGenerationButton
+                <VideoSegmentGenerationButton
                   subtitles={subtitles}
                   filteredSubtitles={filteredSubtitles}
                   currentVideo={currentVideo}
@@ -145,9 +145,9 @@ export function SubtitleList({
                   filteredSubtitles={filteredSubtitles}
                   currentVideo={currentVideo}
                   searchTerm={searchTerm}
-                /> */}
+                />
               </>
-            )}
+            )} */}
           </div>
         </div>
 

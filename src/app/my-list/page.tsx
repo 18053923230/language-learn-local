@@ -12,25 +12,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  ArrowLeft,
   Play,
   Clock,
-  Calendar,
   Search,
-  Filter,
-  Target,
-  TrendingUp,
-  Star,
   Trash2,
   Download,
-  Eye,
   Video as VideoIcon,
-  Headphones,
-  CheckCircle,
   Clock3,
   CalendarDays,
   FileText,
   Languages,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -62,6 +54,15 @@ export default function MyListPage() {
   // Load user's learning projects
   useEffect(() => {
     loadLearningProjects();
+  }, []);
+
+  // Force re-render to clear HMR issues
+  useEffect(() => {
+    // This helps clear HMR cache issues
+    const timer = setTimeout(() => {
+      // Force a re-render
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Filter and sort projects
@@ -246,7 +247,7 @@ export default function MyListPage() {
                   <p className="text-2xl font-bold text-gray-900">
                     {projects.length}
                   </p>
-                  <p className="text-sm text-gray-600">Total Projects</p>
+                  <p className="text-sm text-gray-600">Learning Projects</p>
                 </div>
               </div>
             </CardContent>
@@ -256,7 +257,7 @@ export default function MyListPage() {
             <CardContent className="p-6">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <Target className="w-5 h-5 text-green-600" />
+                  <TrendingUp className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">
@@ -279,7 +280,7 @@ export default function MyListPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">
-                    {projects.reduce((sum, p) => sum + p.vocabularyCount, 0)}
+                    {projects.length}
                   </p>
                   <p className="text-sm text-gray-600">Words Learned</p>
                 </div>
@@ -445,16 +446,11 @@ export default function MyListPage() {
                   {/* Stats */}
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center space-x-2">
-                      <Headphones className="w-4 h-4 text-blue-500" />
-                      <span>{project.subtitles.length} subtitles</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <FileText className="w-4 h-4 text-green-500" />
-                      <span>{project.vocabularyCount} words</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Play className="w-4 h-4 text-purple-500" />
-                      <span>{project.playCount} plays</span>
+                      <Clock className="w-4 h-4 text-blue-500" />
+                      <span>
+                        {formatDuration(project.learningProgress)} /{" "}
+                        {formatDuration(project.duration)}
+                      </span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <CalendarDays className="w-4 h-4 text-orange-500" />

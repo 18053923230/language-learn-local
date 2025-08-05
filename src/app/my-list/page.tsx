@@ -34,6 +34,9 @@ import type { VocabularyItem } from "@/types/vocabulary";
 import { toast } from "sonner";
 import { Navigation } from "@/components/navigation";
 import { BookOpen } from "lucide-react";
+import { VideoStorageService } from "@/lib/video-storage";
+import { SubtitleVersionStorage } from "@/lib/subtitle-version-storage";
+import { subtitleStorage } from "@/lib/subtitle-storage";
 
 export default function MyListPage() {
   const router = useRouter();
@@ -139,18 +142,102 @@ export default function MyListPage() {
 
   const handleLoadProject = async (project: MyLearningProject) => {
     try {
+      console.log("=== Loading Project ===");
+      console.log("Project:", project);
+
       // Load video
       const video = await StorageManager.getVideo(project.videoId);
       if (!video) {
         toast.error("Video not found");
         return;
       }
+      console.log("Loaded video:", video);
 
-      // Load subtitles
-      const subtitles = await StorageManager.getSubtitles(project.videoId);
+      // Try to get video file from VideoStorageService
+      const videoStorageService = VideoStorageService.getInstance();
+      const videoFile = await videoStorageService.getVideoFile(project.videoId);
+
+      let videoUrl = video.url;
+
+      if (videoFile) {
+        // Create a new blob URL from the stored file
+        videoUrl = URL.createObjectURL(videoFile);
+        console.log("Created new blob URL from stored video file");
+      } else {
+        console.log("No stored video file found, using original URL");
+      }
+
+      // Create updated video object with valid URL
+      const updatedVideo = {
+        ...video,
+        url: videoUrl,
+      };
+
+      // Load subtitles with priority: Smart Version > Raw Version > StorageManager > SubtitleStorage
+      console.log("Loading subtitles for videoId:", project.videoId);
+
+      let subtitles: Subtitle[] = [];
+      const subtitleVersionStorage = new SubtitleVersionStorage();
+
+      // 1. Try to get smart version (整理后的字幕)
+      console.log("Trying to load smart subtitle version...");
+      const smartVersion = await subtitleVersionStorage.getDefaultVersion(
+        project.videoId
+      );
+      if (smartVersion && smartVersion.versionType === "optimized") {
+        subtitles = smartVersion.subtitles;
+        console.log("Loaded smart subtitle version:", smartVersion.versionName);
+      } else {
+        console.log("No smart version found, trying raw version...");
+
+        // 2. Try to get raw version (原始字幕)
+        const rawVersion = await subtitleVersionStorage.getVersionsByVideoId(
+          project.videoId
+        );
+        const rawVersionData = rawVersion.find((v) => v.versionType === "raw");
+        if (rawVersionData) {
+          subtitles = rawVersionData.subtitles;
+          console.log(
+            "Loaded raw subtitle version:",
+            rawVersionData.versionName
+          );
+        } else {
+          console.log("No raw version found, trying StorageManager...");
+
+          // 3. Try StorageManager
+          const storageSubtitles = await StorageManager.getSubtitles(
+            project.videoId
+          );
+          if (storageSubtitles.length > 0) {
+            subtitles = storageSubtitles;
+            console.log("Loaded subtitles from StorageManager");
+          } else {
+            console.log(
+              "No subtitles in StorageManager, trying SubtitleStorage..."
+            );
+
+            // 4. Try SubtitleStorage
+            const subtitleRecord =
+              await subtitleStorage.getSubtitleRecordByVideoId(project.videoId);
+            if (subtitleRecord) {
+              subtitles = subtitleRecord.subtitles;
+              console.log("Loaded subtitles from SubtitleStorage");
+            } else {
+              console.log("No subtitles found in any storage");
+            }
+          }
+        }
+      }
+
+      console.log("Final subtitles loaded:", subtitles);
+      console.log(
+        `Loaded ${subtitles.length} subtitles for video ${project.videoId}`
+      );
 
       // Set current video and subtitles
-      setCurrentVideo(video);
+      console.log("Setting current video:", updatedVideo);
+      console.log("Setting subtitles:", subtitles);
+      setCurrentVideo(updatedVideo);
       setSubtitles(subtitles);
 
       // Update last accessed time
@@ -160,7 +247,14 @@ export default function MyListPage() {
 
       // Navigate to main page
       router.push("/");
-      toast.success("Project loaded successfully");
+
+      if (subtitles.length > 0) {
+        toast.success(
+          `Project loaded successfully with ${subtitles.length} subtitles`
+        );
+      } else {
+        toast.warning("Project loaded but no subtitles found");
+      }
     } catch (error) {
       console.error("Error loading project:", error);
       toast.error("Failed to load project");
